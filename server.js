@@ -1,13 +1,9 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { initializeFirebase } = require('./config/firebase');
 
 // 載入環境變數
 dotenv.config();
-
-// 初始化 Firebase
-initializeFirebase();
 
 // 建立 Express 應用程式
 const app = express();
@@ -29,11 +25,48 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: '產品訂單管理系統後端 API 運行中',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'development'
   });
 });
 
-// API 路由
+app.get('/', (req, res) => {
+  res.json({ 
+    success: true,
+    message: '產品訂單管理系統 API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      products: '/api/products',
+      orders: '/api/orders',
+      customers: '/api/customers',
+      contacts: '/api/contacts',
+      dashboard: '/api/dashboard'
+    }
+  });
+});
+
+// 延遲 Firebase 初始化，只在實際使用時才初始化
+let firebaseInitialized = false;
+const initFirebaseOnce = () => {
+  if (!firebaseInitialized && process.env.FIREBASE_PROJECT_ID) {
+    try {
+      const { initializeFirebase } = require('./config/firebase');
+      initializeFirebase();
+      firebaseInitialized = true;
+      console.log('✅ Firebase initialized');
+    } catch (error) {
+      console.error('⚠️ Firebase initialization failed:', error.message);
+    }
+  }
+};
+
+// API 路由（延遲初始化 Firebase）
+app.use('/api/*', (req, res, next) => {
+  initFirebaseOnce();
+  next();
+});
+
 app.use('/api/products', require('./routes/products'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/customers', require('./routes/customers'));
@@ -58,11 +91,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 啟動伺服器
-app.listen(PORT, () => {
-  console.log(`🚀 伺服器運行於 http://localhost:${PORT}`);
-  console.log(`📚 健康檢查: http://localhost:${PORT}/health`);
-  console.log(`🌍 環境: ${process.env.NODE_ENV || 'development'}`);
-});
+// 只在非 Vercel 環境下啟動伺服器
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 伺服器運行於 http://localhost:${PORT}`);
+    console.log(`📚 健康檢查: http://localhost:${PORT}/health`);
+    console.log(`🌍 環境: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
 
 module.exports = app;
