@@ -22,11 +22,17 @@ app.use((req, res, next) => {
 
 // 健康檢查路由
 app.get('/health', (req, res) => {
+  const { isFirebaseReady, getInitError } = require('./config/firebase');
+  const firebaseStatus = isFirebaseReady() ? 'ready' : 'not initialized';
+  const firebaseError = getInitError();
+  
   res.json({ 
     status: 'ok', 
     message: '產品訂單管理系統後端 API 運行中',
     timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV || 'development'
+    env: process.env.NODE_ENV || 'development',
+    firebase: firebaseStatus,
+    firebaseError: firebaseError ? firebaseError.message : null
   });
 });
 
