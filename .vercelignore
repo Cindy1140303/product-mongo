@@ -1,0 +1,17 @@
+# Python 相關
+*.py
+*.pyc
+__pycache__/
+.env.mongodb
+
+# 開發檔案
+node_modules/
+.env
+*.log
+
+# 文件
+MONGODB_SETUP.md
+
+# Git
+.git/
+.gitignore
