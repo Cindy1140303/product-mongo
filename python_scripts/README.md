@@ -5,7 +5,7 @@
 ## 檔案說明
 
 - **setup_mongodb.py** - MongoDB 資料庫初始化程式
-- **requirements.txt** - Python 套件依賴
+- **python_requirements.txt** - Python 套件依賴（已重新命名避免 Vercel 誤判）
 - **.env.mongodb** - MongoDB 環境變數範例
 - **MONGODB_SETUP.md** - 完整設定說明文件
 
@@ -13,7 +13,7 @@
 
 1. 安裝依賴：
    ```bash
-   pip install -r requirements.txt
+   pip install -r python_requirements.txt
    ```
 
 2. 設定環境變數（編輯 `.env` 或使用 `.env.mongodb` 範例）
