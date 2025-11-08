@@ -1,8 +1,5 @@
-# Python 相關
-*.py
-*.pyc
-__pycache__/
-.env.mongodb
+# Python 相關檔案（僅用於資料庫初始化）
+python_scripts/
 
 # 開發檔案
 node_modules/
@@ -10,7 +7,7 @@ node_modules/
 *.log
 
 # 文件
-MONGODB_SETUP.md
+*.md
 
 # Git
 .git/
