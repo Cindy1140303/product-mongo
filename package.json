@@ -4,7 +4,7 @@
   "description": "產品訂單管理系統後端 API",
   "main": "server.js",
   "engines": {
-    "node": ">=18.x"
+    "node": "18.x"
   },
   "scripts": {
     "start": "node server.js",
