@@ -1,0 +1,25 @@
+# 依賴項
+node_modules/
+package-lock.json
+yarn.lock
+
+# 環境變數
+.env
+
+# 日誌
+logs/
+*.log
+npm-debug.log*
+
+# Firebase 金鑰
+serviceAccountKey.json
+
+# 作業系統檔案
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
