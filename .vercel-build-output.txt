@@ -1,0 +1,6 @@
+# 這是一個 Node.js 專案
+# Framework: Express.js
+# Runtime: Node.js 22.x
+
+這個專案使用 Node.js 和 Express.js 建構後端 API。
+Python 腳本僅用於資料庫初始化，不參與部署。
