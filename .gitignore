@@ -1,2 +1,3 @@
 
 api/[...path].js
+node_modules

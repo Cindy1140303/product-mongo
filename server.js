@@ -32,8 +32,49 @@ app.get('/health', async (req, res) => {
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV || 'development',
     mongodb: mongoStatus,
-    mongoError: mongoError ? mongoError.message : null
+    mongoError: mongoError ? mongoError.message : null,
+    envCheck: {
+      hasUsername: !!process.env.DB_USERNAME,
+      hasPassword: !!process.env.DB_PASSWORD,
+      usernamePreview: process.env.DB_USERNAME ? process.env.DB_USERNAME.substring(0, 5) + '***' : 'NOT SET'
+    }
   });
+});
+
+// 測試 MongoDB 連線端點
+app.get('/api/test-connection', async (req, res) => {
+  try {
+    console.log('🧪 測試 MongoDB 連線...');
+    console.log('環境變數檢查:');
+    console.log('  DB_USERNAME:', process.env.DB_USERNAME ? '✓ 已設定' : '✗ 未設定');
+    console.log('  DB_PASSWORD:', process.env.DB_PASSWORD ? '✓ 已設定' : '✗ 未設定');
+    
+    const { connectToMongoDB, getDb } = require('./config/mongodb');
+    await connectToMongoDB();
+    const db = getDb();
+    
+    // 測試資料庫操作
+    const collections = await db.listCollections().toArray();
+    
+    res.json({
+      success: true,
+      message: 'MongoDB 連線成功!',
+      database: 'product_management',
+      collections: collections.map(c => c.name),
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ 連線測試失敗:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      envCheck: {
+        hasUsername: !!process.env.DB_USERNAME,
+        hasPassword: !!process.env.DB_PASSWORD
+      }
+    });
+  }
 });
 
 app.get('/', (req, res) => {
