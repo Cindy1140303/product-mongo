@@ -55,22 +55,36 @@ app.get('/', (req, res) => {
 // 延遲 MongoDB 初始化，只在實際使用時才初始化
 let mongoDBInitialized = false;
 const initMongoDBOnce = async () => {
-  if (!mongoDBInitialized && process.env.DB_USERNAME && process.env.DB_PASSWORD) {
-    try {
-      const { connectToMongoDB } = require('./config/mongodb');
-      await connectToMongoDB();
-      mongoDBInitialized = true;
-      console.log('✅ MongoDB 連線成功');
-    } catch (error) {
-      console.error('⚠️ MongoDB 連線失敗:', error.message);
-    }
+  if (mongoDBInitialized) return;
+  
+  if (!process.env.DB_USERNAME || !process.env.DB_PASSWORD) {
+    console.error('❌ 缺少環境變數: DB_USERNAME 或 DB_PASSWORD');
+    throw new Error('資料庫配置錯誤');
+  }
+  
+  try {
+    const { connectToMongoDB } = require('./config/mongodb');
+    await connectToMongoDB();
+    mongoDBInitialized = true;
+    console.log('✅ MongoDB 連線成功');
+  } catch (error) {
+    console.error('⚠️ MongoDB 連線失敗:', error.message);
+    throw error;
   }
 };
 
 // API 路由（延遲初始化 MongoDB）
 app.use('/api/*', async (req, res, next) => {
-  await initMongoDBOnce();
-  next();
+  try {
+    await initMongoDBOnce();
+    next();
+  } catch (error) {
+    res.status(503).json({
+      success: false,
+      message: '資料庫連線失敗',
+      error: error.message
+    });
+  }
 });
 
 app.use('/api/products', require('./routes/products'));

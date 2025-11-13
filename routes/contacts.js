@@ -96,6 +96,9 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
+    console.log('📝 收到新增聯絡人請求:', req.body);
+    console.log('👤 使用者ID:', req.userId);
+    
     const { name, email, phone, message } = req.body;
 
     if (!name || !email) {
