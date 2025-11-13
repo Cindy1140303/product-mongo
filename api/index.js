@@ -1,15 +1,29 @@
 // Vercel Serverless Function
-// 處理所有 /api/* 請求
+// 處理所有 /api 請求
 
 const app = require('../server');
 
-// Vercel 需要一個處理函數
+// Vercel serverless function 入口
 module.exports = async (req, res) => {
-  // 確保 URL 以 /api 開頭，因為 Express 路由需要它
+  // 設定 CORS 標頭
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-User-Id, Content-Type, Authorization');
+
+  // 處理 OPTIONS 請求
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  // 添加 /api 前綴以匹配 Express 路由
   if (!req.url.startsWith('/api')) {
     req.url = '/api' + req.url;
   }
   
-  // 讓 Express 處理請求
+  console.log('📥 收到請求:', req.method, req.url);
+  
+  // 將請求傳遞給 Express app
   return app(req, res);
 };
