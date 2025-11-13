@@ -1,5 +1,8 @@
-# Python 相關檔案（僅用於資料庫初始化）
+# Python 相關檔案（僅用於資料庫初始化，不部署）
 python_scripts/
+*.py
+**/*.py
+**/python_requirements.txt
 
 # 開發檔案
 node_modules/
