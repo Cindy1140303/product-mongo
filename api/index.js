@@ -3,10 +3,12 @@
 
 const app = require('../server');
 
-// Vercel 需要一個處理函數，而不是直接導出 app
+// Vercel 需要一個處理函數
 module.exports = async (req, res) => {
-  // 移除 /api 前綴，因為 Vercel 會自動處理
-  req.url = req.url.replace(/^\/api/, '') || '/';
+  // 確保 URL 以 /api 開頭，因為 Express 路由需要它
+  if (!req.url.startsWith('/api')) {
+    req.url = '/api' + req.url;
+  }
   
   // 讓 Express 處理請求
   return app(req, res);
