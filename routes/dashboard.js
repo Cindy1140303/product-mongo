@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { getDb, getCollectionPath } = require('../config/firebase');
+const { getUserCollection } = require('../config/mongodb');
 
-// 中介軟體：提取使用者 ID
+// 中介軟體:提取使用者 ID
 const getUserId = (req, res, next) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -15,115 +15,145 @@ const getUserId = (req, res, next) => {
 router.use(getUserId);
 
 /**
- * 計算日期差距（天數）
- */
-const daysUntil = (dateString) => {
-  const oneDay = 24 * 60 * 60 * 1000;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const targetDate = new Date(dateString);
-  targetDate.setHours(0, 0, 0, 0);
-
-  if (isNaN(targetDate)) return null;
-
-  const diffDays = Math.round((targetDate.getTime() - today.getTime()) / oneDay);
-  return diffDays;
-};
-
-/**
- * GET /api/dashboard
+ * GET /api/dashboard/stats
  * 獲取儀表板統計資料
  */
-router.get('/', async (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
-    const db = getDb();
+    const productsCollection = getUserCollection(req.userId, 'products');
+    const ordersCollection = getUserCollection(req.userId, 'orders');
+    const customersCollection = getUserCollection(req.userId, 'customers');
+    const contactsCollection = getUserCollection(req.userId, 'contacts');
 
-    // 取得所有集合的資料
-    const [productsSnapshot, ordersSnapshot, customersSnapshot, contactsSnapshot] = await Promise.all([
-      db.collection(getCollectionPath(req.userId, 'products')).get(),
-      db.collection(getCollectionPath(req.userId, 'orders')).get(),
-      db.collection(getCollectionPath(req.userId, 'customers')).get(),
-      db.collection(getCollectionPath(req.userId, 'contacts')).get()
+    // 平行查詢所有集合
+    const [products, orders, customers, contacts] = await Promise.all([
+      productsCollection.find({ userId: req.userId }).toArray(),
+      ordersCollection.find({ userId: req.userId }).toArray(),
+      customersCollection.find({ userId: req.userId }).toArray(),
+      contactsCollection.find({ userId: req.userId }).toArray()
     ]);
 
-    const products = [];
-    productsSnapshot.forEach(doc => {
-      products.push({ id: doc.id, ...doc.data() });
-    });
+    // 計算產品總值
+    const totalProductValue = products.reduce((sum, product) => {
+      return sum + (product.sellingPrice || 0) * (product.quantity || 0);
+    }, 0);
 
-    // 篩選即將到期的產品（30 天內）
-    const expiringProducts = products
-      .map(p => ({
-        ...p,
-        daysRemaining: daysUntil(p.expirationDate)
-      }))
-      .filter(p => p.daysRemaining !== null && p.daysRemaining <= 30 && p.daysRemaining >= 0)
-      .sort((a, b) => a.daysRemaining - b.daysRemaining);
+    // 計算訂單總收入
+    const totalRevenue = orders.reduce((sum, order) => {
+      return sum + (order.unitPrice || 0) * (order.quantity || 0);
+    }, 0);
 
-    // 統計資料
-    const statistics = {
-      totalProducts: productsSnapshot.size,
-      totalOrders: ordersSnapshot.size,
-      totalCustomers: customersSnapshot.size,
-      totalContacts: contactsSnapshot.size,
-      expiringProductsCount: expiringProducts.length
-    };
+    // 計算低庫存產品（數量 < 10）
+    const lowStockProducts = products.filter(p => (p.quantity || 0) < 10).length;
 
-    res.json({ 
-      success: true, 
+    // 計算近期訂單（最近30天）
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentOrders = orders.filter(order => {
+      if (!order.createdAt) return false;
+      const orderDate = new Date(order.createdAt);
+      return orderDate >= thirtyDaysAgo;
+    }).length;
+
+    res.json({
+      success: true,
       data: {
-        statistics,
-        expiringProducts
+        products: {
+          total: products.length,
+          totalValue: totalProductValue,
+          lowStock: lowStockProducts
+        },
+        orders: {
+          total: orders.length,
+          totalRevenue: totalRevenue,
+          recent: recentOrders
+        },
+        customers: {
+          total: customers.length
+        },
+        contacts: {
+          total: contacts.length
+        }
       }
     });
   } catch (error) {
-    console.error('獲取儀表板資料錯誤:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: '獲取儀表板資料失敗',
-      error: error.message 
+    console.error('獲取儀表板統計錯誤:', error);
+    res.status(500).json({
+      success: false,
+      message: '獲取統計資料失敗',
+      error: error.message
     });
   }
 });
 
 /**
- * GET /api/dashboard/expiring-products
- * 獲取即將到期的產品（30 天內）
+ * GET /api/dashboard/recent-orders
+ * 獲取最近訂單
  */
-router.get('/expiring-products', async (req, res) => {
+router.get('/recent-orders', async (req, res) => {
   try {
-    const db = getDb();
-    const { days = 30 } = req.query; // 預設 30 天
-    
-    const collectionPath = getCollectionPath(req.userId, 'products');
-    const snapshot = await db.collection(collectionPath).get();
-    
-    const products = [];
-    snapshot.forEach(doc => {
-      products.push({ id: doc.id, ...doc.data() });
-    });
+    const collection = getUserCollection(req.userId, 'orders');
+    const limit = parseInt(req.query.limit) || 10;
 
-    const daysThreshold = parseInt(days);
-    const expiringProducts = products
-      .map(p => ({
-        ...p,
-        daysRemaining: daysUntil(p.expirationDate)
-      }))
-      .filter(p => p.daysRemaining !== null && p.daysRemaining <= daysThreshold && p.daysRemaining >= 0)
-      .sort((a, b) => a.daysRemaining - b.daysRemaining);
+    const orders = await collection
+      .find({ userId: req.userId })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .toArray();
 
-    res.json({ 
-      success: true, 
-      data: expiringProducts,
-      count: expiringProducts.length,
-      daysThreshold
+    const formattedOrders = orders.map(doc => ({
+      id: doc._id.toString(),
+      ...doc,
+      _id: undefined
+    }));
+
+    res.json({
+      success: true,
+      data: formattedOrders
     });
   } catch (error) {
-    console.error('獲取即將到期產品錯誤:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: '獲取即將到期產品失敗',
-      error: error.message 
+    console.error('獲取最近訂單錯誤:', error);
+    res.status(500).json({
+      success: false,
+      message: '獲取最近訂單失敗',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/dashboard/low-stock
+ * 獲取低庫存產品
+ */
+router.get('/low-stock', async (req, res) => {
+  try {
+    const collection = getUserCollection(req.userId, 'products');
+    const threshold = parseInt(req.query.threshold) || 10;
+
+    const products = await collection
+      .find({ 
+        userId: req.userId,
+        quantity: { $lt: threshold }
+      })
+      .sort({ quantity: 1 })
+      .toArray();
+
+    const formattedProducts = products.map(doc => ({
+      id: doc._id.toString(),
+      ...doc,
+      _id: undefined
+    }));
+
+    res.json({
+      success: true,
+      data: formattedProducts
+    });
+  } catch (error) {
+    console.error('獲取低庫存產品錯誤:', error);
+    res.status(500).json({
+      success: false,
+      message: '獲取低庫存產品失敗',
+      error: error.message
     });
   }
 });

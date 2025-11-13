@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { getDb, getCollectionPath } = require('../config/firebase');
+const { getUserCollection } = require('../config/mongodb');
+const { ObjectId } = require('mongodb');
 
-// 中介軟體：提取使用者 ID
+// 中介軟體:提取使用者 ID
 const getUserId = (req, res, next) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -20,16 +21,17 @@ router.use(getUserId);
  */
 router.get('/', async (req, res) => {
   try {
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'customers');
+    const collection = getUserCollection(req.userId, 'customers');
     const { search } = req.query;
     
-    const snapshot = await db.collection(collectionPath).get();
+    let customers = await collection.find({ userId: req.userId }).toArray();
     
-    let customers = [];
-    snapshot.forEach(doc => {
-      customers.push({ id: doc.id, ...doc.data() });
-    });
+    // 轉換 _id 為 id
+    customers = customers.map(doc => ({
+      id: doc._id.toString(),
+      ...doc,
+      _id: undefined
+    }));
 
     // 前端搜尋篩選
     if (search) {
@@ -61,12 +63,13 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'customers');
-    const docRef = db.collection(collectionPath).doc(req.params.id);
-    const doc = await docRef.get();
+    const collection = getUserCollection(req.userId, 'customers');
+    const doc = await collection.findOne({ 
+      _id: new ObjectId(req.params.id),
+      userId: req.userId 
+    });
 
-    if (!doc.exists) {
+    if (!doc) {
       return res.status(404).json({ 
         success: false, 
         message: '找不到該客戶' 
@@ -75,7 +78,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({ 
       success: true, 
-      data: { id: doc.id, ...doc.data() }
+      data: { id: doc._id.toString(), ...doc, _id: undefined }
     });
   } catch (error) {
     console.error('獲取客戶錯誤:', error);
@@ -93,46 +96,47 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
-    const { name, contactPerson, phone, email } = req.body;
+    const { name, contactPerson, phone, email, address } = req.body;
 
-    // 驗證必填欄位
-    if (!name || !contactPerson) {
+    if (!name) {
       return res.status(400).json({ 
         success: false, 
-        message: '缺少必填欄位（客戶名稱、聯絡人）' 
+        message: '缺少客戶名稱' 
       });
     }
 
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'customers');
+    const collection = getUserCollection(req.userId, 'customers');
 
-    // 檢查客戶名稱是否已存在
-    const existingCustomers = await db.collection(collectionPath)
-      .where('name', '==', name)
-      .get();
+    // 檢查客戶名稱是否重複
+    const existingCustomer = await collection.findOne({ 
+      name, 
+      userId: req.userId 
+    });
 
-    if (!existingCustomers.empty) {
+    if (existingCustomer) {
       return res.status(400).json({ 
         success: false, 
-        message: '此客戶名稱已存在，請使用獨特的名稱' 
+        message: '此客戶名稱已存在' 
       });
     }
 
     const newCustomer = {
       name,
-      contactPerson,
+      contactPerson: contactPerson || '',
       phone: phone || '',
       email: email || '',
+      address: address || '',
+      userId: req.userId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    const docRef = await db.collection(collectionPath).add(newCustomer);
+    const result = await collection.insertOne(newCustomer);
 
     res.status(201).json({ 
       success: true, 
       message: '客戶新增成功',
-      data: { id: docRef.id, ...newCustomer }
+      data: { id: result.insertedId.toString(), ...newCustomer }
     });
   } catch (error) {
     console.error('新增客戶錯誤:', error);
@@ -150,14 +154,15 @@ router.post('/', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const { name, contactPerson, phone, email } = req.body;
+    const { name, contactPerson, phone, email, address } = req.body;
 
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'customers');
-    const docRef = db.collection(collectionPath).doc(req.params.id);
-    const doc = await docRef.get();
+    const collection = getUserCollection(req.userId, 'customers');
+    const doc = await collection.findOne({ 
+      _id: new ObjectId(req.params.id),
+      userId: req.userId 
+    });
 
-    if (!doc.exists) {
+    if (!doc) {
       return res.status(404).json({ 
         success: false, 
         message: '找不到該客戶' 
@@ -165,15 +170,16 @@ router.put('/:id', async (req, res) => {
     }
 
     // 如果名稱有變更，檢查新名稱是否重複
-    if (name && name !== doc.data().name) {
-      const existingCustomers = await db.collection(collectionPath)
-        .where('name', '==', name)
-        .get();
+    if (name && name !== doc.name) {
+      const existingCustomer = await collection.findOne({ 
+        name, 
+        userId: req.userId 
+      });
 
-      if (!existingCustomers.empty) {
+      if (existingCustomer) {
         return res.status(400).json({ 
           success: false, 
-          message: '此客戶名稱已存在，請使用獨特的名稱' 
+          message: '此客戶名稱已存在' 
         });
       }
     }
@@ -183,17 +189,25 @@ router.put('/:id', async (req, res) => {
     };
 
     if (name) updateData.name = name;
-    if (contactPerson) updateData.contactPerson = contactPerson;
+    if (contactPerson !== undefined) updateData.contactPerson = contactPerson;
     if (phone !== undefined) updateData.phone = phone;
     if (email !== undefined) updateData.email = email;
+    if (address !== undefined) updateData.address = address;
 
-    await docRef.update(updateData);
+    await collection.updateOne(
+      { _id: new ObjectId(req.params.id), userId: req.userId },
+      { $set: updateData }
+    );
 
-    const updatedDoc = await docRef.get();
+    const updatedDoc = await collection.findOne({ 
+      _id: new ObjectId(req.params.id),
+      userId: req.userId 
+    });
+    
     res.json({ 
       success: true, 
       message: '客戶更新成功',
-      data: { id: updatedDoc.id, ...updatedDoc.data() }
+      data: { id: updatedDoc._id.toString(), ...updatedDoc, _id: undefined }
     });
   } catch (error) {
     console.error('更新客戶錯誤:', error);
@@ -211,19 +225,19 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'customers');
-    const docRef = db.collection(collectionPath).doc(req.params.id);
-    const doc = await docRef.get();
+    const collection = getUserCollection(req.userId, 'customers');
+    
+    const result = await collection.deleteOne({ 
+      _id: new ObjectId(req.params.id),
+      userId: req.userId 
+    });
 
-    if (!doc.exists) {
+    if (result.deletedCount === 0) {
       return res.status(404).json({ 
         success: false, 
         message: '找不到該客戶' 
       });
     }
-
-    await docRef.delete();
 
     res.json({ 
       success: true, 

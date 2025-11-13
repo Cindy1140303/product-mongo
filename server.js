@@ -21,18 +21,18 @@ app.use((req, res, next) => {
 });
 
 // 健康檢查路由
-app.get('/health', (req, res) => {
-  const { isFirebaseReady, getInitError } = require('./config/firebase');
-  const firebaseStatus = isFirebaseReady() ? 'ready' : 'not initialized';
-  const firebaseError = getInitError();
+app.get('/health', async (req, res) => {
+  const { isMongoDBReady, getConnectionError } = require('./config/mongodb');
+  const mongoStatus = isMongoDBReady() ? 'connected' : 'not connected';
+  const mongoError = getConnectionError();
   
   res.json({ 
     status: 'ok', 
     message: '產品訂單管理系統後端 API 運行中',
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV || 'development',
-    firebase: firebaseStatus,
-    firebaseError: firebaseError ? firebaseError.message : null
+    mongodb: mongoStatus,
+    mongoError: mongoError ? mongoError.message : null
   });
 });
 
@@ -52,24 +52,24 @@ app.get('/', (req, res) => {
   });
 });
 
-// 延遲 Firebase 初始化，只在實際使用時才初始化
-let firebaseInitialized = false;
-const initFirebaseOnce = () => {
-  if (!firebaseInitialized && process.env.FIREBASE_PROJECT_ID) {
+// 延遲 MongoDB 初始化，只在實際使用時才初始化
+let mongoDBInitialized = false;
+const initMongoDBOnce = async () => {
+  if (!mongoDBInitialized && process.env.DB_USERNAME && process.env.DB_PASSWORD) {
     try {
-      const { initializeFirebase } = require('./config/firebase');
-      initializeFirebase();
-      firebaseInitialized = true;
-      console.log('✅ Firebase initialized');
+      const { connectToMongoDB } = require('./config/mongodb');
+      await connectToMongoDB();
+      mongoDBInitialized = true;
+      console.log('✅ MongoDB 連線成功');
     } catch (error) {
-      console.error('⚠️ Firebase initialization failed:', error.message);
+      console.error('⚠️ MongoDB 連線失敗:', error.message);
     }
   }
 };
 
-// API 路由（延遲初始化 Firebase）
-app.use('/api/*', (req, res, next) => {
-  initFirebaseOnce();
+// API 路由（延遲初始化 MongoDB）
+app.use('/api/*', async (req, res, next) => {
+  await initMongoDBOnce();
   next();
 });
 

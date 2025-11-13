@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { getDb, getCollectionPath } = require('../config/firebase');
+const { getUserCollection } = require('../config/mongodb');
+const { ObjectId } = require('mongodb');
 
 // 中介軟體：從請求標頭提取使用者 ID（可擴展為完整身份驗證）
 const getUserId = (req, res, next) => {
@@ -21,19 +22,20 @@ router.use(getUserId);
  */
 router.get('/', async (req, res) => {
   try {
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'products');
-    const snapshot = await db.collection(collectionPath).get();
+    const collection = getUserCollection(req.userId, 'products');
+    const products = await collection.find({ userId: req.userId }).toArray();
     
-    const products = [];
-    snapshot.forEach(doc => {
-      products.push({ id: doc.id, ...doc.data() });
-    });
+    // 轉換 _id 為 id
+    const formattedProducts = products.map(doc => ({
+      id: doc._id.toString(),
+      ...doc,
+      _id: undefined
+    }));
 
     res.json({ 
       success: true, 
-      data: products,
-      count: products.length
+      data: formattedProducts,
+      count: formattedProducts.length
     });
   } catch (error) {
     console.error('獲取產品列表錯誤:', error);
@@ -51,12 +53,13 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'products');
-    const docRef = db.collection(collectionPath).doc(req.params.id);
-    const doc = await docRef.get();
+    const collection = getUserCollection(req.userId, 'products');
+    const doc = await collection.findOne({ 
+      _id: new ObjectId(req.params.id),
+      userId: req.userId 
+    });
 
-    if (!doc.exists) {
+    if (!doc) {
       return res.status(404).json({ 
         success: false, 
         message: '找不到該產品規格' 
@@ -65,7 +68,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({ 
       success: true, 
-      data: { id: doc.id, ...doc.data() }
+      data: { id: doc._id.toString(), ...doc, _id: undefined }
     });
   } catch (error) {
     console.error('獲取產品錯誤:', error);
@@ -93,18 +96,18 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'products');
+    const collection = getUserCollection(req.userId, 'products');
 
     // 檢查產品名稱是否已存在
-    const existingProducts = await db.collection(collectionPath)
-      .where('name', '==', name)
-      .get();
+    const existingProduct = await collection.findOne({ 
+      name, 
+      userId: req.userId 
+    });
 
-    if (!existingProducts.empty) {
+    if (existingProduct) {
       return res.status(400).json({ 
         success: false, 
-        message: '此產品名稱已存在，請使用獨特的名稱' 
+        message: '此產品名稱已存在,請使用獨特的名稱' 
       });
     }
 
@@ -115,17 +118,18 @@ router.post('/', async (req, res) => {
       sellingPrice: parseFloat(sellingPrice),
       quantity: parseInt(quantity) || 0,
       serialPrefix: serialPrefix || '',
+      userId: req.userId,
       expirationDate,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    const docRef = await db.collection(collectionPath).add(newProduct);
+    const result = await collection.insertOne(newProduct);
 
     res.status(201).json({ 
       success: true, 
       message: '產品規格新增成功',
-      data: { id: docRef.id, ...newProduct }
+      data: { id: result.insertedId.toString(), ...newProduct }
     });
   } catch (error) {
     console.error('新增產品錯誤:', error);
@@ -145,12 +149,13 @@ router.put('/:id', async (req, res) => {
   try {
     const { name, content, costPrice, sellingPrice, quantity, serialPrefix, expirationDate } = req.body;
 
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'products');
-    const docRef = db.collection(collectionPath).doc(req.params.id);
-    const doc = await docRef.get();
+    const collection = getUserCollection(req.userId, 'products');
+    const doc = await collection.findOne({ 
+      _id: new ObjectId(req.params.id),
+      userId: req.userId 
+    });
 
-    if (!doc.exists) {
+    if (!doc) {
       return res.status(404).json({ 
         success: false, 
         message: '找不到該產品規格' 
@@ -158,12 +163,13 @@ router.put('/:id', async (req, res) => {
     }
 
     // 如果名稱有變更，檢查新名稱是否重複
-    if (name && name !== doc.data().name) {
-      const existingProducts = await db.collection(collectionPath)
-        .where('name', '==', name)
-        .get();
+    if (name && name !== doc.name) {
+      const existingProduct = await collection.findOne({ 
+        name, 
+        userId: req.userId 
+      });
 
-      if (!existingProducts.empty) {
+      if (existingProduct) {
         return res.status(400).json({ 
           success: false, 
           message: '此產品名稱已存在，請使用獨特的名稱' 
@@ -183,13 +189,20 @@ router.put('/:id', async (req, res) => {
     if (serialPrefix !== undefined) updateData.serialPrefix = serialPrefix;
     if (expirationDate) updateData.expirationDate = expirationDate;
 
-    await docRef.update(updateData);
+    await collection.updateOne(
+      { _id: new ObjectId(req.params.id), userId: req.userId },
+      { $set: updateData }
+    );
 
-    const updatedDoc = await docRef.get();
+    const updatedDoc = await collection.findOne({ 
+      _id: new ObjectId(req.params.id),
+      userId: req.userId 
+    });
+    
     res.json({ 
       success: true, 
       message: '產品規格更新成功',
-      data: { id: updatedDoc.id, ...updatedDoc.data() }
+      data: { id: updatedDoc._id.toString(), ...updatedDoc, _id: undefined }
     });
   } catch (error) {
     console.error('更新產品錯誤:', error);
@@ -207,19 +220,19 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'products');
-    const docRef = db.collection(collectionPath).doc(req.params.id);
-    const doc = await docRef.get();
+    const collection = getUserCollection(req.userId, 'products');
+    
+    const result = await collection.deleteOne({ 
+      _id: new ObjectId(req.params.id),
+      userId: req.userId 
+    });
 
-    if (!doc.exists) {
+    if (result.deletedCount === 0) {
       return res.status(404).json({ 
         success: false, 
         message: '找不到該產品規格' 
       });
     }
-
-    await docRef.delete();
 
     res.json({ 
       success: true, 

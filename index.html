@@ -76,30 +76,46 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, orderBy, limit, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script>
+        // --- API 配置 ---
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000/api'
+            : '/api';
+        
+        // 預設使用者 ID (實際應用應該使用登入系統)
+        const USER_ID = 'default-user';
 
-        // 設置 Firebase 日誌等級以便除錯
-        setLogLevel('Debug');
+        // --- API 請求輔助函數 ---
+        async function apiRequest(endpoint, options = {}) {
+            const url = `${API_BASE_URL}${endpoint}`;
+            const headers = {
+                'Content-Type': 'application/json',
+                'x-user-id': USER_ID,
+                ...options.headers
+            };
 
-        // --- 全域變數初始化 (強制使用 Canvas 環境提供的變數) ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        let firebaseConfig;
-        try {
-            firebaseConfig = JSON.parse(__firebase_config);
-        } catch (e) {
-            console.error("Firebase config is missing or invalid. Using placeholder.", e);
-            // 預留一個功能性的空配置
-            firebaseConfig = {};
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || '請求失敗');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('API 請求錯誤:', error);
+                throw error;
+            }
         }
 
-        let app;
-        let db;
-        let auth;
-        let userId = null;
-        let isAuthReady = false;
+        // --- 初始化 ---
+        let userId = USER_ID;
+        let isAuthReady = true; // API 不需要認證初始化
 
         // 應用程式狀態
         let currentPage = 'dashboard';
@@ -113,98 +129,75 @@
         let currentCustomer = null;
         let currentContact = null;
 
-        // 啟動 Firebase 應用程式
-        if (Object.keys(firebaseConfig).length > 0) {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-        } else {
-            // 如果配置失敗，使用假資料模式
-            console.warn("Using mock data mode because Firebase config is invalid.");
-            isAuthReady = true;
-            userId = 'mock-user';
-            // 假資料可以放這裡
-        }
-
-        // --- Firebase 身份驗證和初始化 ---
+        // --- 初始化應用程式 ---
         const initAuth = async () => {
-            if (auth) {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                        console.log("Signed in with custom token.");
-                    } else {
-                        await signInAnonymously(auth);
-                        console.log("Signed in anonymously.");
-                    }
-                } catch (error) {
-                    console.error("Firebase authentication failed:", error);
-                    // 即使失敗，也嘗試設置匿名用戶 ID
-                    userId = 'unauth-' + crypto.randomUUID();
-                }
+            // 使用 API 不需要 Firebase 認證
+            console.log('Using API with user ID:', userId);
+            document.getElementById('user-info').textContent = `使用者 ID: ${userId}`;
+            
+            // 載入初始資料
+            await loadAllData();
+            changePage(currentPage);
+        };
 
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        document.getElementById('user-info').textContent = `使用者 ID: ${userId.substring(0, 8)}...`;
-                        isAuthReady = true;
-                        startDataListeners();
-                        changePage(currentPage);
-                    } else {
-                        // 處理登出或匿名用戶情況
-                        userId = crypto.randomUUID();
-                        document.getElementById('user-info').textContent = `使用者 ID: ${userId.substring(0, 8)}... (匿名)`;
-                        isAuthReady = true;
-                        startDataListeners();
-                        changePage(currentPage);
-                    }
-                });
-            } else {
-                // Mock 模式下直接開始
-                document.getElementById('user-info').textContent = `使用者 ID: ${userId} (模擬)`;
-                changePage(currentPage);
+        // --- 載入所有資料 ---
+        const loadAllData = async () => {
+            try {
+                await Promise.all([
+                    loadProducts(),
+                    loadOrders(),
+                    loadCustomers(),
+                    loadContacts()
+                ]);
+                console.log('All data loaded successfully');
+            } catch (error) {
+                console.error('Failed to load data:', error);
             }
         };
 
-        // --- Firestore 集合路徑建構器 ---
-        const getCollectionPath = (collectionName) => {
-            return `artifacts/${appId}/users/${userId}/${collectionName}`;
+        // --- API 資料載入函數 ---
+        const loadProducts = async () => {
+            try {
+                const response = await apiRequest('/products');
+                products = response.data || [];
+                console.log("Products loaded:", products.length);
+            } catch (error) {
+                console.error('Failed to load products:', error);
+                products = [];
+            }
         };
 
-        // --- 資料即時監聽 (onSnapshot) ---
-        const startDataListeners = () => {
-            if (!db || !isAuthReady || !userId) return;
+        const loadOrders = async () => {
+            try {
+                const response = await apiRequest('/orders');
+                orders = response.data || [];
+                console.log("Orders loaded:", orders.length);
+            } catch (error) {
+                console.error('Failed to load orders:', error);
+                orders = [];
+            }
+        };
 
-            // 1. 產品規格監聽
-            onSnapshot(collection(db, getCollectionPath('products')), (snapshot) => {
-                products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                console.log("Products updated:", products.length);
-                if (currentPage === 'products') renderProductsPage();
-                if (currentPage === 'dashboard') renderDashboard();
-            });
+        const loadCustomers = async () => {
+            try {
+                const response = await apiRequest('/customers');
+                customers = response.data || [];
+                console.log("Customers loaded:", customers.length);
+            } catch (error) {
+                console.error('Failed to load customers:', error);
+                customers = [];
+            }
+        };
 
-            // 2. 訂單監聽
-            onSnapshot(collection(db, getCollectionPath('orders')), (snapshot) => {
-                orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                console.log("Orders updated:", orders.length);
-                if (currentPage === 'orders') renderOrdersPage();
-                if (currentPage === 'dashboard') renderDashboard();
-            });
-
-            // 3. 客戶監聽
-            onSnapshot(collection(db, getCollectionPath('customers')), (snapshot) => {
-                customers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                console.log("Customers updated:", customers.length);
-                if (currentPage === 'customers') renderCustomersPage();
-                if (currentPage === 'orders') renderOrdersPage(); // 訂單可能需要客戶名稱下拉選單
-            });
-
-            // 4. 聯絡人監聽
-            onSnapshot(collection(db, getCollectionPath('contacts')), (snapshot) => {
-                contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                console.log("Contacts updated:", contacts.length);
-                if (currentPage === 'contacts') renderContactsPage();
-            });
+        const loadContacts = async () => {
+            try {
+                const response = await apiRequest('/contacts');
+                contacts = response.data || [];
+                console.log("Contacts loaded:", contacts.length);
+            } catch (error) {
+                console.error('Failed to load contacts:', error);
+                contacts = [];
+            }
         };
 
         // --- 核心 CRUD 操作 ---
@@ -216,21 +209,25 @@
          * @param {string|null} docId - 如果存在，則更新，否則新增
          */
         const saveData = async (collectionName, data, docId = null) => {
-            if (!db || !userId) return console.error("Database not ready.");
-
-            const collectionRef = collection(db, getCollectionPath(collectionName));
-            const baseData = { ...data, updatedAt: new Date().toISOString() };
-
             try {
                 if (docId) {
-                    await updateDoc(doc(collectionRef, docId), baseData);
+                    // 更新資料
+                    await apiRequest(`/${collectionName}/${docId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify(data)
+                    });
                     showMessage('success', `更新成功: ${collectionName}`);
                 } else {
-                    const newData = { ...baseData, createdAt: new Date().toISOString() };
-                    await addDoc(collectionRef, newData);
+                    // 新增資料
+                    await apiRequest(`/${collectionName}`, {
+                        method: 'POST',
+                        body: JSON.stringify(data)
+                    });
                     showMessage('success', `新增成功: ${collectionName}`);
                 }
                 closeModal();
+                // 重新載入相關資料
+                await reloadCollection(collectionName);
             } catch (e) {
                 console.error(`Error saving ${collectionName}:`, e);
                 showMessage('error', `儲存失敗: ${e.message}`);
@@ -243,16 +240,44 @@
          * @param {string} docId - 要刪除的文檔 ID
          */
         const deleteData = async (collectionName, docId) => {
-            if (!db || !userId) return console.error("Database not ready.");
             if (!window.confirm("確定要刪除這筆資料嗎？此操作無法恢復。")) return;
 
             try {
-                const docRef = doc(db, getCollectionPath(collectionName), docId);
-                await deleteDoc(docRef);
+                await apiRequest(`/${collectionName}/${docId}`, {
+                    method: 'DELETE'
+                });
                 showMessage('success', `刪除成功: ${collectionName}`);
+                // 重新載入相關資料
+                await reloadCollection(collectionName);
             } catch (e) {
                 console.error(`Error deleting ${collectionName}:`, e);
                 showMessage('error', `刪除失敗: ${e.message}`);
+            }
+        };
+
+        /**
+         * 重新載入特定集合的資料
+         */
+        const reloadCollection = async (collectionName) => {
+            switch(collectionName) {
+                case 'products':
+                    await loadProducts();
+                    if (currentPage === 'products') renderProductsPage();
+                    if (currentPage === 'dashboard') renderDashboard();
+                    break;
+                case 'orders':
+                    await loadOrders();
+                    if (currentPage === 'orders') renderOrdersPage();
+                    if (currentPage === 'dashboard') renderDashboard();
+                    break;
+                case 'customers':
+                    await loadCustomers();
+                    if (currentPage === 'customers') renderCustomersPage();
+                    break;
+                case 'contacts':
+                    await loadContacts();
+                    if (currentPage === 'contacts') renderContactsPage();
+                    break;
             }
         };
 
@@ -625,44 +650,36 @@
             saveData('orders', data, id || null);
         };
 
-        window.exportOrdersToCsv = () => {
-            if (orders.length === 0) {
-                showMessage('error', '沒有訂單資料可匯出。');
-                return;
+        window.exportOrdersToCsv = async () => {
+            try {
+                // 直接下載後端生成的 CSV
+                const url = `${API_BASE_URL}/orders/export/csv`;
+                const response = await fetch(url, {
+                    headers: {
+                        'x-user-id': USER_ID
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('CSV 匯出失敗');
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", downloadUrl);
+                link.setAttribute("download", `Order_Quote_${formatDate(new Date())}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(downloadUrl);
+
+                showMessage('success', '報價單 (CSV) 已成功產生並下載！');
+            } catch (error) {
+                console.error('CSV export error:', error);
+                showMessage('error', 'CSV 匯出失敗');
             }
-
-            const headers = ["訂單ID", "產品名稱", "產品序號", "客戶名稱", "單價", "個數", "總價", "訂單開始日期", "訂單結束日期", "建立日期"];
-            let csv = headers.join(',') + '\n';
-
-            orders.forEach(order => {
-                const total = order.unitPrice * order.quantity;
-                const row = [
-                    order.id,
-                    order.productName,
-                    order.serialNumber,
-                    order.customerName,
-                    order.unitPrice.toFixed(2),
-                    order.quantity,
-                    total.toFixed(2),
-                    formatDate(order.startDate),
-                    formatDate(order.endDate),
-                    formatDate(order.createdAt),
-                ].map(item => `"${String(item).replace(/"/g, '""')}"`).join(','); // 處理CSV引號
-
-                csv += row + '\n';
-            });
-
-            const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' }); // \ufeff 解決中文亂碼
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `Order_Quote_${formatDate(new Date())}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            showMessage('success', '報價單 (CSV) 已成功產生並下載！');
         };
 
 

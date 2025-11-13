@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { getUserCollection } = require('../config/mongodb');
-const { ObjectId } = require('mongodb');
+const { getDb, getCollectionPath } = require('../config/firebase');
 const { format } = require('date-fns');
 
-// 中介軟體:提取使用者 ID
+// 中介軟體：提取使用者 ID
 const getUserId = (req, res, next) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -22,17 +21,17 @@ router.use(getUserId);
  */
 router.get('/', async (req, res) => {
   try {
-    const collection = getUserCollection(req.userId, 'orders');
+    const db = getDb();
+    const collectionPath = getCollectionPath(req.userId, 'orders');
     const { search } = req.query;
     
-    let orders = await collection.find({ userId: req.userId }).toArray();
+    let query = db.collection(collectionPath);
+    const snapshot = await query.get();
     
-    // 轉換 _id 為 id
-    orders = orders.map(doc => ({
-      id: doc._id.toString(),
-      ...doc,
-      _id: undefined
-    }));
+    let orders = [];
+    snapshot.forEach(doc => {
+      orders.push({ id: doc.id, ...doc.data() });
+    });
 
     // 前端搜尋篩選（如果提供 search 參數）
     if (search) {
@@ -65,13 +64,12 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const collection = getUserCollection(req.userId, 'orders');
-    const doc = await collection.findOne({ 
-      _id: new ObjectId(req.params.id),
-      userId: req.userId 
-    });
+    const db = getDb();
+    const collectionPath = getCollectionPath(req.userId, 'orders');
+    const docRef = db.collection(collectionPath).doc(req.params.id);
+    const doc = await docRef.get();
 
-    if (!doc) {
+    if (!doc.exists) {
       return res.status(404).json({ 
         success: false, 
         message: '找不到該訂單' 
@@ -80,7 +78,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({ 
       success: true, 
-      data: { id: doc._id.toString(), ...doc, _id: undefined }
+      data: { id: doc.id, ...doc.data() }
     });
   } catch (error) {
     console.error('獲取訂單錯誤:', error);
@@ -116,15 +114,15 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const collection = getUserCollection(req.userId, 'orders');
+    const db = getDb();
+    const collectionPath = getCollectionPath(req.userId, 'orders');
 
     // 檢查序號是否已存在
-    const existingOrder = await collection.findOne({ 
-      serialNumber, 
-      userId: req.userId 
-    });
+    const existingOrders = await db.collection(collectionPath)
+      .where('serialNumber', '==', serialNumber)
+      .get();
 
-    if (existingOrder) {
+    if (!existingOrders.empty) {
       return res.status(400).json({ 
         success: false, 
         message: '此產品序號已被使用，請使用獨特序號' 
@@ -139,17 +137,16 @@ router.post('/', async (req, res) => {
       startDate,
       endDate,
       customerName: customerName || '',
-      userId: req.userId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    const result = await collection.insertOne(newOrder);
+    const docRef = await db.collection(collectionPath).add(newOrder);
 
     res.status(201).json({ 
       success: true, 
       message: '訂單新增成功',
-      data: { id: result.insertedId.toString(), ...newOrder }
+      data: { id: docRef.id, ...newOrder }
     });
   } catch (error) {
     console.error('新增訂單錯誤:', error);
@@ -177,13 +174,12 @@ router.put('/:id', async (req, res) => {
       customerName 
     } = req.body;
 
-    const collection = getUserCollection(req.userId, 'orders');
-    const doc = await collection.findOne({ 
-      _id: new ObjectId(req.params.id),
-      userId: req.userId 
-    });
+    const db = getDb();
+    const collectionPath = getCollectionPath(req.userId, 'orders');
+    const docRef = db.collection(collectionPath).doc(req.params.id);
+    const doc = await docRef.get();
 
-    if (!doc) {
+    if (!doc.exists) {
       return res.status(404).json({ 
         success: false, 
         message: '找不到該訂單' 
@@ -191,13 +187,12 @@ router.put('/:id', async (req, res) => {
     }
 
     // 如果序號有變更，檢查新序號是否重複
-    if (serialNumber && serialNumber !== doc.serialNumber) {
-      const existingOrder = await collection.findOne({ 
-        serialNumber, 
-        userId: req.userId 
-      });
+    if (serialNumber && serialNumber !== doc.data().serialNumber) {
+      const existingOrders = await db.collection(collectionPath)
+        .where('serialNumber', '==', serialNumber)
+        .get();
 
-      if (existingOrder) {
+      if (!existingOrders.empty) {
         return res.status(400).json({ 
           success: false, 
           message: '此產品序號已被使用，請使用獨特序號' 
@@ -217,20 +212,13 @@ router.put('/:id', async (req, res) => {
     if (endDate) updateData.endDate = endDate;
     if (customerName !== undefined) updateData.customerName = customerName;
 
-    await collection.updateOne(
-      { _id: new ObjectId(req.params.id), userId: req.userId },
-      { $set: updateData }
-    );
+    await docRef.update(updateData);
 
-    const updatedDoc = await collection.findOne({ 
-      _id: new ObjectId(req.params.id),
-      userId: req.userId 
-    });
-    
+    const updatedDoc = await docRef.get();
     res.json({ 
       success: true, 
       message: '訂單更新成功',
-      data: { id: updatedDoc._id.toString(), ...updatedDoc, _id: undefined }
+      data: { id: updatedDoc.id, ...updatedDoc.data() }
     });
   } catch (error) {
     console.error('更新訂單錯誤:', error);
@@ -248,19 +236,19 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const collection = getUserCollection(req.userId, 'orders');
-    
-    const result = await collection.deleteOne({ 
-      _id: new ObjectId(req.params.id),
-      userId: req.userId 
-    });
+    const db = getDb();
+    const collectionPath = getCollectionPath(req.userId, 'orders');
+    const docRef = db.collection(collectionPath).doc(req.params.id);
+    const doc = await docRef.get();
 
-    if (result.deletedCount === 0) {
+    if (!doc.exists) {
       return res.status(404).json({ 
         success: false, 
         message: '找不到該訂單' 
       });
     }
+
+    await docRef.delete();
 
     res.json({ 
       success: true, 
@@ -282,15 +270,21 @@ router.delete('/:id', async (req, res) => {
  */
 router.get('/export/csv', async (req, res) => {
   try {
-    const collection = getUserCollection(req.userId, 'orders');
-    const orders = await collection.find({ userId: req.userId }).toArray();
+    const db = getDb();
+    const collectionPath = getCollectionPath(req.userId, 'orders');
+    const snapshot = await db.collection(collectionPath).get();
 
-    if (orders.length === 0) {
+    if (snapshot.empty) {
       return res.status(404).json({ 
         success: false, 
         message: '沒有訂單資料可匯出' 
       });
     }
+
+    const orders = [];
+    snapshot.forEach(doc => {
+      orders.push({ id: doc.id, ...doc.data() });
+    });
 
     // 建立 CSV 內容
     const headers = ["訂單ID", "產品名稱", "產品序號", "客戶名稱", "單價", "個數", "總價", "訂單開始日期", "訂單結束日期", "建立日期"];
@@ -308,7 +302,7 @@ router.get('/export/csv', async (req, res) => {
       };
 
       const row = [
-        order._id.toString(),
+        order.id,
         order.productName || '',
         order.serialNumber || '',
         order.customerName || '',

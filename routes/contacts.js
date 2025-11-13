@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { getDb, getCollectionPath } = require('../config/firebase');
+const { getUserCollection } = require('../config/mongodb');
+const { ObjectId } = require('mongodb');
 
-// 中介軟體：提取使用者 ID
+// 中介軟體:提取使用者 ID
 const getUserId = (req, res, next) => {
   const userId = req.headers['x-user-id'];
   if (!userId) {
@@ -16,27 +17,28 @@ router.use(getUserId);
 
 /**
  * GET /api/contacts
- * 獲取所有內部聯絡人
+ * 獲取所有聯絡人
  */
 router.get('/', async (req, res) => {
   try {
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'contacts');
+    const collection = getUserCollection(req.userId, 'contacts');
     const { search } = req.query;
     
-    const snapshot = await db.collection(collectionPath).get();
+    let contacts = await collection.find({ userId: req.userId }).toArray();
     
-    let contacts = [];
-    snapshot.forEach(doc => {
-      contacts.push({ id: doc.id, ...doc.data() });
-    });
+    // 轉換 _id 為 id
+    contacts = contacts.map(doc => ({
+      id: doc._id.toString(),
+      ...doc,
+      _id: undefined
+    }));
 
     // 前端搜尋篩選
     if (search) {
       const searchLower = search.toLowerCase();
       contacts = contacts.filter(contact => 
         contact.name?.toLowerCase().includes(searchLower) ||
-        contact.department?.toLowerCase().includes(searchLower)
+        contact.email?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -61,12 +63,13 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'contacts');
-    const docRef = db.collection(collectionPath).doc(req.params.id);
-    const doc = await docRef.get();
+    const collection = getUserCollection(req.userId, 'contacts');
+    const doc = await collection.findOne({ 
+      _id: new ObjectId(req.params.id),
+      userId: req.userId 
+    });
 
-    if (!doc.exists) {
+    if (!doc) {
       return res.status(404).json({ 
         success: false, 
         message: '找不到該聯絡人' 
@@ -75,7 +78,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({ 
       success: true, 
-      data: { id: doc.id, ...doc.data() }
+      data: { id: doc._id.toString(), ...doc, _id: undefined }
     });
   } catch (error) {
     console.error('獲取聯絡人錯誤:', error);
@@ -89,38 +92,37 @@ router.get('/:id', async (req, res) => {
 
 /**
  * POST /api/contacts
- * 新增內部聯絡人
+ * 新增聯絡人
  */
 router.post('/', async (req, res) => {
   try {
-    const { name, department, phone, email } = req.body;
+    const { name, email, phone, message } = req.body;
 
-    // 驗證必填欄位
-    if (!name || !department) {
+    if (!name || !email) {
       return res.status(400).json({ 
         success: false, 
-        message: '缺少必填欄位（姓名、部門）' 
+        message: '缺少必填欄位（姓名、信箱）' 
       });
     }
 
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'contacts');
+    const collection = getUserCollection(req.userId, 'contacts');
 
     const newContact = {
       name,
-      department,
+      email,
       phone: phone || '',
-      email: email || '',
+      message: message || '',
+      userId: req.userId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    const docRef = await db.collection(collectionPath).add(newContact);
+    const result = await collection.insertOne(newContact);
 
     res.status(201).json({ 
       success: true, 
       message: '聯絡人新增成功',
-      data: { id: docRef.id, ...newContact }
+      data: { id: result.insertedId.toString(), ...newContact }
     });
   } catch (error) {
     console.error('新增聯絡人錯誤:', error);
@@ -138,14 +140,15 @@ router.post('/', async (req, res) => {
  */
 router.put('/:id', async (req, res) => {
   try {
-    const { name, department, phone, email } = req.body;
+    const { name, email, phone, message } = req.body;
 
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'contacts');
-    const docRef = db.collection(collectionPath).doc(req.params.id);
-    const doc = await docRef.get();
+    const collection = getUserCollection(req.userId, 'contacts');
+    const doc = await collection.findOne({ 
+      _id: new ObjectId(req.params.id),
+      userId: req.userId 
+    });
 
-    if (!doc.exists) {
+    if (!doc) {
       return res.status(404).json({ 
         success: false, 
         message: '找不到該聯絡人' 
@@ -157,17 +160,24 @@ router.put('/:id', async (req, res) => {
     };
 
     if (name) updateData.name = name;
-    if (department) updateData.department = department;
+    if (email) updateData.email = email;
     if (phone !== undefined) updateData.phone = phone;
-    if (email !== undefined) updateData.email = email;
+    if (message !== undefined) updateData.message = message;
 
-    await docRef.update(updateData);
+    await collection.updateOne(
+      { _id: new ObjectId(req.params.id), userId: req.userId },
+      { $set: updateData }
+    );
 
-    const updatedDoc = await docRef.get();
+    const updatedDoc = await collection.findOne({ 
+      _id: new ObjectId(req.params.id),
+      userId: req.userId 
+    });
+    
     res.json({ 
       success: true, 
       message: '聯絡人更新成功',
-      data: { id: updatedDoc.id, ...updatedDoc.data() }
+      data: { id: updatedDoc._id.toString(), ...updatedDoc, _id: undefined }
     });
   } catch (error) {
     console.error('更新聯絡人錯誤:', error);
@@ -185,19 +195,19 @@ router.put('/:id', async (req, res) => {
  */
 router.delete('/:id', async (req, res) => {
   try {
-    const db = getDb();
-    const collectionPath = getCollectionPath(req.userId, 'contacts');
-    const docRef = db.collection(collectionPath).doc(req.params.id);
-    const doc = await docRef.get();
+    const collection = getUserCollection(req.userId, 'contacts');
+    
+    const result = await collection.deleteOne({ 
+      _id: new ObjectId(req.params.id),
+      userId: req.userId 
+    });
 
-    if (!doc.exists) {
+    if (result.deletedCount === 0) {
       return res.status(404).json({ 
         success: false, 
         message: '找不到該聯絡人' 
       });
     }
-
-    await docRef.delete();
 
     res.json({ 
       success: true, 
