@@ -28,14 +28,22 @@ async function connectToMongoDB() {
     const username = process.env.DB_USERNAME;
     const password = process.env.DB_PASSWORD;
     
+    console.log('🔍 檢查環境變數:');
+    console.log('  - DB_USERNAME:', username ? '已設定' : '❌ 未設定');
+    console.log('  - DB_PASSWORD:', password ? '已設定' : '❌ 未設定');
+    
     if (!username || !password) {
       throw new Error('缺少資料庫連線憑證 (DB_USERNAME 或 DB_PASSWORD)');
     }
 
-    const uri = `mongodb+srv://${username}:${password}@cluster0.rvu2bwc.mongodb.net/?appName=Cluster0`;
+    // URL 編碼密碼以處理特殊字符
+    const encodedPassword = encodeURIComponent(password);
+    const uri = `mongodb+srv://${username}:${encodedPassword}@cluster0.rvu2bwc.mongodb.net/?appName=Cluster0`;
+    
+    console.log('🔗 嘗試連線到 MongoDB Atlas...');
     
     client = new MongoClient(uri, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000,
       maxPoolSize: 10,
     });
 
