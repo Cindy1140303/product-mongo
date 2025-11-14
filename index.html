@@ -833,7 +833,20 @@
                         <i data-lucide="plus" class="w-5 h-5 mr-1"></i> 新增客戶
                     </button>
                 </h2>
-                <input type="text" id="customer-search" oninput="renderCustomersPage(this.value)" placeholder="按客戶名稱或聯絡人搜尋..." class="mb-4 w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                <div class="mb-6 flex gap-3">
+                    <div class="flex-1 relative">
+                        <input type="text" id="customer-search" value="${searchTerm}" placeholder="輸入客戶名稱或聯絡人..." class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-3.5"></i>
+                    </div>
+                    <button onclick="renderCustomersPage(document.getElementById('customer-search').value)" class="bg-primary hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-150 flex items-center gap-2">
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                        查詢
+                    </button>
+                    <button onclick="document.getElementById('customer-search').value=''; renderCustomersPage('')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg shadow-md transition duration-150 flex items-center gap-2">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                        清除
+                    </button>
+                </div>
 
                 <div class="bg-white p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">客戶列表 (${filteredCustomers.length} 筆)</h3>
@@ -946,7 +959,20 @@
                         <i data-lucide="plus" class="w-5 h-5 mr-1"></i> 新增聯絡人
                     </button>
                 </h2>
-                <input type="text" id="contact-search" oninput="renderContactsPage(this.value)" placeholder="按姓名或部門搜尋..." class="mb-4 w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                <div class="mb-6 flex gap-3">
+                    <div class="flex-1 relative">
+                        <input type="text" id="contact-search" value="${searchTerm}" placeholder="輸入姓名或部門..." class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-3.5"></i>
+                    </div>
+                    <button onclick="renderContactsPage(document.getElementById('contact-search').value)" class="bg-primary hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-150 flex items-center gap-2">
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                        查詢
+                    </button>
+                    <button onclick="document.getElementById('contact-search').value=''; renderContactsPage('')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg shadow-md transition duration-150 flex items-center gap-2">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                        清除
+                    </button>
+                </div>
 
                 <div class="bg-white p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">聯絡人列表 (${filteredContacts.length} 筆)</h3>
