@@ -590,7 +590,7 @@
 
             const modalContent = `
                 <h3 class="text-2xl font-bold mb-4">${isEdit ? '編輯訂單' : '新增訂單'}</h3>
-                <form onsubmit="handleOrderSubmit(event, '${id || ''}')" class="space-y-4">
+                <form onsubmit="handleOrderSubmit(event, ${id ? "'" + id + "'" : 'null'})" class="space-y-4">
                     <div>
                         <label for="order-productName" class="block text-sm font-medium text-gray-700">產品名稱</label>
                         <select id="order-productName" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
@@ -654,13 +654,13 @@
                 customerName: document.getElementById('order-customerName').value,
             };
 
-            // 檢查序號唯一性 (僅新增時)
-            if (!id && orders.some(o => o.serialNumber === data.serialNumber)) {
-                showMessage('error', '此產品序號已被使用，請使用獨特序號。');
+            // 檢查序號唯一性 (編輯時排除自己)
+            if (orders.some(o => o.serialNumber === data.serialNumber && o.id !== id)) {
+                showMessage('error', '此產品序號已被使用,請使用獨特序號。');
                 return;
             }
 
-            saveData('orders', data, id || null);
+            saveData('orders', data, id);
         };
 
         window.exportOrdersToCsv = async () => {
@@ -761,7 +761,7 @@
 
             const modalContent = `
                 <h3 class="text-2xl font-bold mb-4">${isEdit ? '編輯產品規格' : '新增產品規格'}</h3>
-                <form onsubmit="handleProductSubmit(event, '${id || ''}')" class="space-y-4">
+                <form onsubmit="handleProductSubmit(event, ${id ? "'" + id + "'" : 'null'})" class="space-y-4">
                     <div>
                         <label for="product-name" class="block text-sm font-medium text-gray-700">產品名稱</label>
                         <input type="text" id="product-name" value="${currentProduct.name || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
@@ -825,7 +825,7 @@
                 return;
             }
 
-            saveData('products', data, id || null);
+            saveData('products', data, id);
         };
 
 
@@ -904,7 +904,7 @@
 
             const modalContent = `
                 <h3 class="text-2xl font-bold mb-4">${isEdit ? '編輯客戶資料' : '新增客戶'}</h3>
-                <form onsubmit="handleCustomerSubmit(event, '${id || ''}')" class="space-y-4">
+                <form onsubmit="handleCustomerSubmit(event, ${id ? "'" + id + "'" : 'null'})" class="space-y-4">
                     <div>
                         <label for="customer-name" class="block text-sm font-medium text-gray-700">客戶名稱 (公司/個人)</label>
                         <input type="text" id="customer-name" value="${currentCustomer.name || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
@@ -951,7 +951,7 @@
                 return;
             }
 
-            saveData('customers', data, id || null);
+            saveData('customers', data, id);
         };
 
 
@@ -1030,7 +1030,7 @@
 
             const modalContent = `
                 <h3 class="text-2xl font-bold mb-4">${isEdit ? '編輯內部聯絡人' : '新增內部聯絡人'}</h3>
-                <form onsubmit="handleContactSubmit(event, '${id || ''}')" class="space-y-4">
+                <form onsubmit="handleContactSubmit(event, ${id ? "'" + id + "'" : 'null'})" class="space-y-4">
                     <div>
                         <label for="contact-name" class="block text-sm font-medium text-gray-700">姓名</label>
                         <input type="text" id="contact-name" value="${currentContact.name || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
@@ -1071,7 +1071,7 @@
                 email: document.getElementById('contact-email').value,
             };
 
-            saveData('contacts', data, id || null);
+            saveData('contacts', data, id);
         };
 
 
