@@ -405,7 +405,7 @@
                     ${renderStatCard('contact', '總聯絡人數', totalContacts, 'yellow')}
                 </div>
 
-                <div class="bg-white p-6 rounded-xl shadow-lg">
+                <div class="bg-white p-6 rounded-md shadow-lg">
                     <h3 class="text-2xl font-semibold mb-4 text-red-600 flex items-center">
                         <i data-lucide="alert-triangle" class="w-6 h-6 mr-2"></i>
                         即將到期的產品 (30 天內)
@@ -457,10 +457,10 @@
             }
 
             return `
-                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-${color}-500 transition duration-300 hover:shadow-xl">
+                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-${color}-500 transition duration-300 hover:shadow-lg">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 ${bgColor} p-3 rounded-full text-white">
-                            <i data-lucide="${icon}" class="w-6 h-6"></i>
+                            <i data-lucide="${icon}" class="w-10 h-10"></i>
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-500">${title}</p>
