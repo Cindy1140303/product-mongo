@@ -15,10 +15,13 @@
         .text-primary { color: #10b981; }
         button { font-size: 18px !important; }
         table { font-size: 14px !important; }
-        .nav-btn { background-color: #f3f4f6 !important; color: #4b5563 !important; border: none !important; transition: all 0.3s ease !important; }
-        .nav-btn:hover { background-color: #e5f2ed !important; color: #10b981 !important; }
+        .nav-btn { background-color: transparent !important; color: #4b5563 !important; border: none !important; transition: all 0.3s ease !important; }
+        .nav-btn:hover { background-color: #10b981 !important; color: #ffffff !important; }
         a.nav-btn.active { background-color: #10b981 !important; color: #ffffff !important; font-weight: 600 !important; }
         a.nav-btn.active:hover { background-color: #059669 !important; color: #ffffff !important; }
+        .table-row { background-color: transparent !important; transition: all 0.3s ease !important; }
+        .table-row:hover { background-color: #10b981 !important; color: #ffffff !important; }
+        .table-row:hover td { color: #ffffff !important; }
     </style>
     <script src="sidebar.js"></script>
 </head>
@@ -145,7 +148,7 @@
                         </tr></thead>
                         <tbody>
                             ${expiringProducts.map(p => `
-                                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                <tr class="table-row border-b border-gray-100">
                                     <td class="px-6 py-3 text-sm text-gray-900 font-medium">${p.name}</td>
                                     <td class="px-6 py-3 text-sm text-gray-600">${formatDate(p.expirationDate)}</td>
                                     <td class="px-6 py-3 text-sm"><span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">${daysUntil(p.expirationDate)} 天</span></td>

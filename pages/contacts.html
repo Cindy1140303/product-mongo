@@ -12,10 +12,13 @@
         .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
         button { font-size: 18px !important; }
         table { font-size: 14px !important; }
-        .nav-btn { background-color: #f3f4f6 !important; color: #4b5563 !important; border: none !important; transition: all 0.3s ease !important; }
-        .nav-btn:hover { background-color: #e5f2ed !important; color: #10b981 !important; }
+        .nav-btn { background-color: transparent !important; color: #4b5563 !important; border: none !important; transition: all 0.3s ease !important; }
+        .nav-btn:hover { background-color: #10b981 !important; color: #ffffff !important; }
         a.nav-btn.active { background-color: #10b981 !important; color: #ffffff !important; font-weight: 600 !important; }
         a.nav-btn.active:hover { background-color: #059669 !important; color: #ffffff !important; }
+        .table-row { background-color: transparent !important; transition: all 0.3s ease !important; }
+        .table-row:hover { background-color: #10b981 !important; color: #ffffff !important; }
+        .table-row:hover td { color: #ffffff !important; }
     </style>
     <script src="sidebar.js"></script>
 </head>
@@ -102,7 +105,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             ${filtered.map(c => `
-                                <tr>
+                                <tr class="table-row">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${c.name}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.department}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.phone}</td>
