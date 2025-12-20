@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>產品管理平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+        .scrollbar-hidden::-webkit-scrollbar { display: none; }
+        .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+        .bg-primary { background-color: #10b981; }
+        .text-primary { color: #10b981; }
+        button { font-size: 18px !important; }
+        table { font-size: 14px !important; }
+        .nav-btn { background-color: transparent !important; color: #4b5563 !important; border: none !important; transition: all 0.3s ease !important; }
+        .nav-btn:hover { background-color: #10b981 !important; color: #ffffff !important; }
+        a.nav-btn.active { background-color: #10b981 !important; color: #ffffff !important; font-weight: 600 !important; }
+        a.nav-btn.active:hover { background-color: #059669 !important; color: #ffffff !important; }
+        .table-row { background-color: transparent !important; transition: all 0.3s ease !important; }
+        .table-row:hover { background-color: #10b981 !important; color: #ffffff !important; }
+        .table-row:hover td { color: #ffffff !important; }
+    </style>
+    <script src="sidebar.js"></script>
+</head>
+<body class="bg-gray-50 flex min-h-screen">
+    <script>generateSidebar('dashboard');</script>
+
+    <main class="flex-1 p-8 overflow-y-auto scrollbar-hidden">
+        <h2 class="text-3xl font-bold text-gray-800 mb-8">儀表板</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-emerald-500">
+                <div class="flex items-center"><div class="bg-emerald-500 p-3 rounded-full text-white"><i data-lucide="package" class="w-10 h-10"></i></div>
+                <div class="ml-4"><p class="text-sm font-medium text-gray-500">產品規格數</p><p class="text-3xl font-bold text-gray-900" id="totalProducts">0</p></div></div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-red-500">
+                <div class="flex items-center"><div class="bg-red-500 p-3 rounded-full text-white"><i data-lucide="shopping-cart" class="w-10 h-10"></i></div>
+                <div class="ml-4"><p class="text-sm font-medium text-gray-500">訂單數</p><p class="text-3xl font-bold text-gray-900" id="totalOrders">0</p></div></div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-blue-500">
+                <div class="flex items-center"><div class="bg-blue-500 p-3 rounded-full text-white"><i data-lucide="users" class="w-10 h-10"></i></div>
+                <div class="ml-4"><p class="text-sm font-medium text-gray-500">客戶數</p><p class="text-3xl font-bold text-gray-900" id="totalCustomers">0</p></div></div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-amber-500">
+                <div class="flex items-center"><div class="bg-amber-500 p-3 rounded-full text-white"><i data-lucide="trending-up" class="w-10 h-10"></i></div>
+                <div class="ml-4"><p class="text-sm font-medium text-gray-500">銷售額</p><p class="text-3xl font-bold text-gray-900" id="totalRevenue">$0</p></div></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4"><i data-lucide="bar-chart-3" class="w-5 h-5 mr-2 text-emerald-500 inline"></i>訂單與銷售額趨勢</h3>
+                <canvas id="chart-orders" height="280"></canvas>
+            </div>
+            <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl shadow-lg p-6 flex flex-col justify-center">
+                <div class="flex items-center justify-between mb-6"><h3 class="text-lg font-semibold text-emerald-900">平均訂單價值</h3>
+                <i data-lucide="bar-chart" class="w-8 h-8 text-emerald-500"></i></div>
+                <div class="text-4xl font-bold text-emerald-900 mb-2" id="avgOrderValue">$0</div>
+                <p class="text-sm text-emerald-700">總銷售額: <span id="totalRevenueDetail">$0</span></p>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4"><i data-lucide="trending-up" class="w-5 h-5 mr-2 text-blue-500 inline"></i>產品庫存分佈</h3>
+            <canvas id="chart-inventory" height="280"></canvas>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <h3 class="text-lg font-semibold mb-4 text-red-600"><i data-lucide="alert-triangle" class="w-5 h-5 mr-2 inline"></i>即將到期的產品 (30 天內)</h3>
+            <div class="overflow-x-auto" id="expiringProductsContainer">
+                <p class="text-gray-500 p-4 text-center">加載中...</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = '/api';
+        const USER_ID = 'default-user';
+
+        async function apiRequest(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': USER_ID }
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('API 錯誤:', error);
+                return { data: [] };
+            }
+        }
+
+        function formatDate(isoString) {
+            if (!isoString) return '-';
+            if (isoString.match(/^\d{4}-\d{2}-\d{2}$/)) return isoString;
+            try { return new Date(isoString).toISOString().split('T')[0]; } catch { return isoString; }
+        }
+
+        function daysUntil(dateString) {
+            const oneDay = 24 * 60 * 60 * 1000;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const targetDate = new Date(dateString);
+            targetDate.setHours(0, 0, 0, 0);
+            if (isNaN(targetDate)) return null;
+            return Math.round((targetDate.getTime() - today.getTime()) / oneDay);
+        }
+
+        async function loadDashboard() {
+            const [productsRes, ordersRes, customersRes] = await Promise.all([
+                apiRequest('/products'),
+                apiRequest('/orders'),
+                apiRequest('/customers')
+            ]);
+
+            const products = productsRes.data || [];
+            const orders = ordersRes.data || [];
+            const customers = customersRes.data || [];
+
+            document.getElementById('totalProducts').textContent = products.length;
+            document.getElementById('totalOrders').textContent = orders.length;
+            document.getElementById('totalCustomers').textContent = customers.length;
+
+            const totalRevenue = orders.reduce((sum, o) => sum + (o.unitPrice * o.quantity || 0), 0);
+            const avgOrderValue = orders.length > 0 ? (totalRevenue / orders.length).toFixed(0) : 0;
+
+            document.getElementById('totalRevenue').textContent = '$' + totalRevenue.toFixed(0);
+            document.getElementById('avgOrderValue').textContent = '$' + avgOrderValue;
+            document.getElementById('totalRevenueDetail').textContent = '$' + totalRevenue.toFixed(2);
+
+            const expiringProducts = products
+                .filter(p => daysUntil(p.expirationDate) !== null && daysUntil(p.expirationDate) <= 30 && daysUntil(p.expirationDate) >= 0)
+                .sort((a, b) => daysUntil(a.expirationDate) - daysUntil(b.expirationDate));
+
+            const container = document.getElementById('expiringProductsContainer');
+            if (expiringProducts.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 p-4 text-center">目前沒有產品即將到期。</p>';
+            } else {
+                container.innerHTML = `
+                    <table class="w-full">
+                        <thead><tr class="border-b border-gray-200">
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">產品名稱</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">有效期限</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">剩餘天數</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">剩餘個數</th>
+                        </tr></thead>
+                        <tbody>
+                            ${expiringProducts.map(p => `
+                                <tr class="table-row border-b border-gray-100">
+                                    <td class="px-6 py-3 text-sm text-gray-900 font-medium">${p.name}</td>
+                                    <td class="px-6 py-3 text-sm text-gray-600">${formatDate(p.expirationDate)}</td>
+                                    <td class="px-6 py-3 text-sm"><span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">${daysUntil(p.expirationDate)} 天</span></td>
+                                    <td class="px-6 py-3 text-sm text-gray-600">${p.quantity}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            lucide.createIcons();
+            setTimeout(() => renderCharts(orders, products), 300);
+        }
+
+        function renderCharts(orders, products) {
+            const months = ['1月', '2月', '3月', '4月', '5月', '6月'];
+            const orderCounts = [5, 8, 6, 10, 12, 9];
+            const revenue = [15, 22, 18, 28, 35, 26];
+
+            new Chart(document.getElementById('chart-orders'), {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{label: '銷售額 ($1000)', data: revenue, backgroundColor: '#22c55e'}, {label: '成本 (%)', data: [30, 35, 32, 38, 40, 35], backgroundColor: '#fb923c'}]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: {legend: {display: true}}}
+            });
+
+            const topProducts = products.slice(0, 6);
+            const labels = topProducts.map(p => p.name.substring(0, 8));
+            const quantities = topProducts.map(p => p.quantity || 0);
+            const prices = topProducts.map(p => (p.sellingPrice || 0) / 100);
+
+            new Chart(document.getElementById('chart-inventory'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{label: '庫存數量', data: quantities, borderColor: '#3b82f6', yAxisID: 'y'}, {label: '單價 (x100)', data: prices, borderColor: '#f59e0b', yAxisID: 'y1'}]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {y: {type: 'linear', position: 'left'}, y1: {type: 'linear', position: 'right'}}
+                }
+            });
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>

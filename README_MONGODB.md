@@ -1,5 +1,7 @@
 # 產品訂單管理系統
 
+> 📘 **Vercel 部署指南**: 查看 [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) 了解完整的 Vercel 部署說明和配置細節。
+
 ## 🎯 專案概述
 
 這是一個完整的產品訂單管理系統,使用 Node.js/Express 後端和 MongoDB 資料庫。

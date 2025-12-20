@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>產品管理平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+        .scrollbar-hidden::-webkit-scrollbar { display: none; }
+        .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+        .bg-primary { background-color: #10b981; }
+        button { font-size: 18px !important; }
+        table { font-size: 14px !important; }
+        .nav-btn { background-color: transparent !important; color: #4b5563 !important; border: none !important; transition: all 0.3s ease !important; }
+        .nav-btn:hover { background-color: #10b981 !important; color: #ffffff !important; }
+        a.nav-btn.active { background-color: #10b981 !important; color: #ffffff !important; font-weight: 600 !important; }
+        a.nav-btn.active:hover { background-color: #059669 !important; color: #ffffff !important; }
+        .table-row { background-color: transparent !important; transition: all 0.3s ease !important; }
+        .table-row:hover { background-color: #10b981 !important; color: #ffffff !important; }
+        .table-row:hover td { color: #ffffff !important; }
+    </style>
+    <script src="sidebar.js"></script>
+</head>
+<body class="bg-gray-50 flex min-h-screen">
+    <script>generateSidebar('orders');</script>
+
+    <main class="flex-1 p-8 overflow-y-auto scrollbar-hidden">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
+            產品訂單管理
+            <button onclick="showOrderForm()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"><i data-lucide="plus" class="w-5 h-5 mr-1 inline"></i>新增訂單</button>
+        </h2>
+
+        <div class="mb-4 flex space-x-2">
+            <input type="text" id="order-search" oninput="filterOrders(this.value)" placeholder="按產品名稱、序號或客戶名稱搜尋..." class="flex-1 p-3 border border-gray-300 rounded-lg">
+            <button onclick="exportOrdersToCsv()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"><i data-lucide="file-text" class="w-5 h-5 mr-1 inline"></i>產生報價單</button>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h3 class="text-xl font-semibold mb-4">訂單列表 (<span id="orderCount">0</span> 筆)</h3>
+            <div class="overflow-x-auto" id="ordersContainer">
+                <p class="text-gray-500 p-4 text-center">加載中...</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal-container" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden justify-center items-center z-50">
+        <div id="modal-content" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = '/api';
+        const USER_ID = 'default-user';
+        let orders = [];
+        let products = [];
+        let customers = [];
+
+        async function apiRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': USER_ID, ...options.headers },
+                    ...options
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('API 錯誤:', error);
+                return { data: [] };
+            }
+        }
+
+        function showMessage(type, message) {
+            const box = document.createElement('div');
+            box.className = `fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white z-50 transition-all ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            box.textContent = message;
+            document.body.appendChild(box);
+            setTimeout(() => box.remove(), 3000);
+        }
+
+        function formatDate(isoString) {
+            if (!isoString) return '-';
+            if (isoString.match(/^\d{4}-\d{2}-\d{2}$/)) return isoString;
+            try { return new Date(isoString).toISOString().split('T')[0]; } catch { return isoString; }
+        }
+
+        async function loadOrders() {
+            const [ordersRes, productsRes, customersRes] = await Promise.all([
+                apiRequest('/orders'),
+                apiRequest('/products'),
+                apiRequest('/customers')
+            ]);
+            orders = ordersRes.data || [];
+            products = productsRes.data || [];
+            customers = customersRes.data || [];
+            renderOrders();
+        }
+
+        function renderOrders(searchTerm = '') {
+            const filtered = orders.filter(o =>
+                o.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                o.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (o.customerName || '').toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            document.getElementById('orderCount').textContent = filtered.length;
+            const container = document.getElementById('ordersContainer');
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 p-4 text-center">無訂單資料。</p>';
+            } else {
+                container.innerHTML = `
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">產品名稱</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">序號</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">客戶名稱</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">個數</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">售價</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">訂單日期</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            ${filtered.map(order => `
+                                <tr class="table-row">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${order.productName}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.serialNumber}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.customerName || '-'}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.quantity}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">$${order.unitPrice.toFixed(2)}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(order.startDate)} 至 ${formatDate(order.endDate)}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                        <button onclick="showOrderForm('${order.id}')" class="text-green-600 hover:text-green-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                        <button onclick="deleteOrder('${order.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        function filterOrders(searchTerm) {
+            renderOrders(searchTerm);
+        }
+
+        function showOrderForm(id = null) {
+            const order = id ? orders.find(o => o.id === id) : {};
+            const isEdit = !!id;
+
+            const productOptions = products.map(p => `<option value="${p.name}" ${order.productName === p.name ? 'selected' : ''}>${p.name}</option>`).join('');
+            const customerOptions = customers.map(c => `<option value="${c.name}" ${order.customerName === c.name ? 'selected' : ''}>${c.name}</option>`).join('');
+
+            document.getElementById('modal-content').innerHTML = `
+                <h3 class="text-2xl font-bold mb-4">${isEdit ? '編輯訂單' : '新增訂單'}</h3>
+                <form onsubmit="handleOrderSubmit(event, '${id || ''}')" class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-700">產品名稱</label>
+                    <select id="productName" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                        <option value="">請選擇產品規格</option>${productOptions}</select></div>
+                    <div><label class="block text-sm font-medium text-gray-700">產品序號</label>
+                    <input type="text" id="serialNumber" value="${order.serialNumber || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700">售價</label>
+                        <input type="number" id="unitPrice" value="${order.unitPrice || ''}" required step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                        <div><label class="block text-sm font-medium text-gray-700">個數</label>
+                        <input type="number" id="quantity" value="${order.quantity || 1}" required min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700">開始日期</label>
+                        <input type="date" id="startDate" value="${formatDate(order.startDate) || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                        <div><label class="block text-sm font-medium text-gray-700">結束日期</label>
+                        <input type="date" id="endDate" value="${formatDate(order.endDate) || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                    </div>
+                    <div><label class="block text-sm font-medium text-gray-700">客戶名稱</label>
+                    <select id="customerName" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                        <option value="">請選擇客戶</option>${customerOptions}</select></div>
+                    <div class="flex justify-end space-x-2 pt-4">
+                        <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">取消</button>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">${isEdit ? '保存修改' : '新增訂單'}</button>
+                    </div>
+                </form>
+            `;
+            document.getElementById('modal-container').classList.remove('hidden');
+            document.getElementById('modal-container').classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('modal-container').classList.add('hidden');
+            document.getElementById('modal-container').classList.remove('flex');
+        }
+
+        async function handleOrderSubmit(event, id) {
+            event.preventDefault();
+            const data = {
+                productName: document.getElementById('productName').value,
+                serialNumber: document.getElementById('serialNumber').value,
+                unitPrice: parseFloat(document.getElementById('unitPrice').value),
+                quantity: parseInt(document.getElementById('quantity').value),
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                customerName: document.getElementById('customerName').value,
+            };
+
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const endpoint = id ? `/orders/${id}` : '/orders';
+                await apiRequest(endpoint, {method, body: JSON.stringify(data)});
+                showMessage('success', id ? '更新成功' : '新增成功');
+                closeModal();
+                loadOrders();
+            } catch (error) {
+                showMessage('error', '操作失敗');
+            }
+        }
+
+        async function deleteOrder(id) {
+            if (!confirm('確定要刪除嗎？')) return;
+            try {
+                await apiRequest(`/orders/${id}`, {method: 'DELETE'});
+                showMessage('success', '刪除成功');
+                loadOrders();
+            } catch (error) {
+                showMessage('error', '刪除失敗');
+            }
+        }
+
+        function exportOrdersToCsv() {
+            if (orders.length === 0) {
+                showMessage('error', '沒有訂單資料');
+                return;
+            }
+            const headers = ["訂單ID", "產品名稱", "產品序號", "客戶名稱", "單價", "個數", "總價"];
+            let csv = headers.join(',') + '\n';
+            orders.forEach(order => {
+                csv += [order.id, order.productName, order.serialNumber, order.customerName, order.unitPrice.toFixed(2), order.quantity, (order.unitPrice * order.quantity).toFixed(2)].join(',') + '\n';
+            });
+            const blob = new Blob([`\ufeff${csv}`], {type: 'text/csv;charset=utf-8;'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Order_Quote_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            showMessage('success', '報價單已下載');
+        }
+
+        document.getElementById('modal-container').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-container') closeModal();
+        });
+
+        loadOrders();
+    </script>
+</body>
+</html>
