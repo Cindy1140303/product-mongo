@@ -162,8 +162,18 @@
         }
         
         /* 側邊欄導航按鈕樣式 */
+        .nav-btn {
+            background-color: #ffffff !important;
+            color: #374151 !important;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+        
         .nav-btn:hover {
-            background-color: #d1fae5;
+            background-color: #d1fae5 !important;
+            color: #10b981 !important;
+            border-color: #10b981;
+            font-weight: 500;
         }
         
         .nav-btn.active-dashboard,
@@ -171,9 +181,19 @@
         .nav-btn.active-products,
         .nav-btn.active-customers,
         .nav-btn.active-contacts {
-            background-color: #d1fae5;
-            color: #10b981;
+            background-color: #10b981 !important;
+            color: #ffffff !important;
+            border-color: #10b981;
             font-weight: 600;
+        }
+        
+        .nav-btn.active-dashboard:hover,
+        .nav-btn.active-orders:hover,
+        .nav-btn.active-products:hover,
+        .nav-btn.active-customers:hover,
+        .nav-btn.active-contacts:hover {
+            background-color: #059669 !important;
+            border-color: #059669;
         }
     </style>
 </head>
@@ -191,23 +211,23 @@
             </button>
         </div>
         <nav class="flex flex-col p-4 space-y-2">
-            <button onclick="changePage('dashboard')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-dashboard">
+            <button onclick="changePage('dashboard')" class="nav-btn group flex items-center p-3 rounded-lg transition duration-150 active-dashboard">
                 <i data-lucide="layout-grid" class="w-5 h-5 mr-3"></i>
                 <span class="sidebar-text">儀表板 (到期產品)</span>
             </button>
-            <button onclick="changePage('orders')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-orders">
+            <button onclick="changePage('orders')" class="nav-btn group flex items-center p-3 rounded-lg transition duration-150 active-orders">
                 <i data-lucide="clipboard-list" class="w-5 h-5 mr-3"></i>
                 <span class="sidebar-text">產品訂單管理</span>
             </button>
-            <button onclick="changePage('products')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-products">
+            <button onclick="changePage('products')" class="nav-btn group flex items-center p-3 rounded-lg transition duration-150 active-products">
                 <i data-lucide="package" class="w-5 h-5 mr-3"></i>
                 <span class="sidebar-text">產品規格登錄</span>
             </button>
-            <button onclick="changePage('customers')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-customers">
+            <button onclick="changePage('customers')" class="nav-btn group flex items-center p-3 rounded-lg transition duration-150 active-customers">
                 <i data-lucide="users" class="w-5 h-5 mr-3"></i>
                 <span class="sidebar-text">客戶管理</span>
             </button>
-            <button onclick="changePage('contacts')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-contacts">
+            <button onclick="changePage('contacts')" class="nav-btn group flex items-center p-3 rounded-lg transition duration-150 active-contacts">
                 <i data-lucide="contact" class="w-5 h-5 mr-3"></i>
                 <span class="sidebar-text">內部聯絡人建立</span>
             </button>
