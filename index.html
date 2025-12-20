@@ -566,7 +566,6 @@
             const today = new Date().toISOString().split('T')[0];
             const expiringProducts = products
                 .filter(p => daysUntil(p.expirationDate) !== null && daysUntil(p.expirationDate) <= 30 && daysUntil(p.expirationDate) >= 0)
-                // 依據到期天數排序，快到期的在前
                 .sort((a, b) => daysUntil(a.expirationDate) - daysUntil(b.expirationDate));
 
             const totalProducts = products.length;
@@ -574,64 +573,86 @@
             const totalCustomers = customers.length;
             const totalContacts = contacts.length;
 
-            const contentHTML = `
-                <h2 class="text-3xl font-bold text-gray-800 mb-6">儀表板 (Dashboard)</h2>
+            // 計算銷售數據
+            const totalRevenue = orders.reduce((sum, o) => sum + (o.unitPrice * o.quantity || 0), 0);
+            const avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(0) : 0;
 
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <!-- 統計卡片 -->
-                    ${renderStatCard('package', '總產品規格數', totalProducts, 'green')}
-                    ${renderStatCard('clipboard-list', '總訂單數', totalOrders, 'blue')}
-                    ${renderStatCard('users', '總客戶數', totalCustomers, 'indigo')}
-                    ${renderStatCard('contact', '總聯絡人數', totalContacts, 'yellow')}
+            const contentHTML = `
+                <h2 class="text-3xl font-bold text-gray-800 mb-8">儀表板</h2>
+
+                <!-- 統計卡片網格 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    ${renderDashboardCard('產品規格數', totalProducts, '個', 'emerald', 'package')}
+                    ${renderDashboardCard('訂單數', totalOrders, '筆', 'red', 'shopping-cart')}
+                    ${renderDashboardCard('客戶數', totalCustomers, '家', 'blue', 'users')}
+                    ${renderDashboardCard('銷售額', '$' + totalRevenue.toFixed(0), '', 'amber', 'trending-up')}
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4 flex items-center">
-                            <i data-lucide="bar-chart-3" class="w-5 h-5 mr-2 text-emerald-500"></i>
-                            訂單與銷售額趨勢
-                        </h3>
-                        <canvas id="chart-orders"></canvas>
+                <!-- 圖表區域 -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- 訂單趨勢圖 (大) -->
+                    <div class="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                                <i data-lucide="bar-chart-3" class="w-5 h-5 mr-2 text-emerald-500"></i>
+                                訂單與銷售額趨勢
+                            </h3>
+                        </div>
+                        <canvas id="chart-orders" height="250"></canvas>
                     </div>
 
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h3 class="text-xl font-semibold mb-4 flex items-center">
+                    <!-- 側邊信息卡片 -->
+                    <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl shadow-lg p-6 border border-emerald-200">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-emerald-900">平均訂單價值</h3>
+                            <i data-lucide="bar-chart" class="w-8 h-8 text-emerald-500"></i>
+                        </div>
+                        <div class="text-4xl font-bold text-emerald-900 mb-2">$${avgOrderValue}</div>
+                        <p class="text-sm text-emerald-700">總銷售額: $${totalRevenue.toFixed(2)}</p>
+                    </div>
+                </div>
+
+                <!-- 庫存分佈 -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
                             <i data-lucide="trending-up" class="w-5 h-5 mr-2 text-blue-500"></i>
                             產品庫存分佈
                         </h3>
-                        <canvas id="chart-inventory"></canvas>
                     </div>
+                    <canvas id="chart-inventory" height="250"></canvas>
                 </div>
 
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-2xl font-semibold mb-4 text-red-600 flex items-center">
-                        <i data-lucide="alert-triangle" class="w-6 h-6 mr-2"></i>
+                <!-- 即將到期產品表格 -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                    <h3 class="text-lg font-semibold mb-4 text-red-600 flex items-center">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 mr-2"></i>
                         即將到期的產品 (30 天內)
                     </h3>
                     ${expiringProducts.length === 0
-                        ? '<p class="text-gray-500 p-4">目前沒有產品即將到期。</p>'
+                        ? '<p class="text-gray-500 p-4 text-center">目前沒有產品即將到期。</p>'
                         : `
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">產品名稱</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">有效期限</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">剩餘天數</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">剩餘個數</th>
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-gray-200">
+                                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">產品名稱</th>
+                                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">有效期限</th>
+                                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">剩餘天數</th>
+                                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">剩餘個數</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody>
                                     ${expiringProducts.map(p => `
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(p.expirationDate)}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                                <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                                            <td class="px-6 py-3 text-sm text-gray-900 font-medium">${p.name}</td>
+                                            <td class="px-6 py-3 text-sm text-gray-600">${formatDate(p.expirationDate)}</td>
+                                            <td class="px-6 py-3 text-sm">
+                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${daysUntil(p.expirationDate) <= 7 ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}">
                                                     ${daysUntil(p.expirationDate)} 天
                                                 </span>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.quantity}</td>
+                                            <td class="px-6 py-3 text-sm text-gray-600">${p.quantity} 個</td>
                                         </tr>
                                     `).join('')}
                                 </tbody>
@@ -643,7 +664,6 @@
             document.getElementById('app-content').innerHTML = contentHTML;
             lucide.createIcons();
             
-            // 延遲渲染圖表，確保 DOM 已準備好
             setTimeout(() => {
                 try {
                     renderOrdersChart();
@@ -652,6 +672,31 @@
                     console.error('圖表渲染錯誤:', e);
                 }
             }, 300);
+        };
+
+        const renderDashboardCard = (label, value, unit, colorClass, icon) => {
+            const colorConfig = {
+                'emerald': { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-900', icon: 'text-emerald-500' },
+                'red': { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-900', icon: 'text-red-500' },
+                'blue': { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-900', icon: 'text-blue-500' },
+                'amber': { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-900', icon: 'text-amber-500' }
+            };
+            const color = colorConfig[colorClass];
+            
+            return `
+                <div class="${color.bg} ${color.border} border rounded-2xl shadow-lg p-6">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600 mb-1">${label}</p>
+                            <div class="flex items-baseline gap-1">
+                                <p class="text-3xl font-bold ${color.text}">${value}</p>
+                                <span class="text-sm ${color.text}">${unit}</span>
+                            </div>
+                        </div>
+                        <i data-lucide="${icon}" class="w-8 h-8 ${color.icon}"></i>
+                    </div>
+                </div>
+            `;
         };
 
         const renderStatCard = (icon, title, value, color) => {
@@ -688,7 +733,6 @@
                 return;
             }
             
-            // 確保 Chart 全局變數存在
             if (typeof Chart === 'undefined') {
                 console.error('Chart.js not loaded');
                 return;
@@ -710,33 +754,38 @@
                         labels: months,
                         datasets: [
                             {
-                                label: '訂單數',
-                                data: orderCounts,
-                                backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                                borderColor: '#10b981',
-                                borderWidth: 2,
-                                borderRadius: 5
-                            },
-                            {
                                 label: '銷售額 ($千)',
                                 data: revenue,
-                                backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                                borderColor: '#3b82f6',
-                                borderWidth: 2,
-                                borderRadius: 5,
-                                type: 'line'
+                                backgroundColor: 'rgba(34, 197, 94, 0.85)',
+                                borderColor: 'rgb(22, 163, 74)',
+                                borderWidth: 0,
+                                borderRadius: 8,
+                                barThickness: 40
+                            },
+                            {
+                                label: '成本 ($千)',
+                                data: [10, 15, 12, 18, 22, 16],
+                                backgroundColor: 'rgba(251, 146, 60, 0.85)',
+                                borderColor: 'rgb(234, 88, 12)',
+                                borderWidth: 0,
+                                borderRadius: 8,
+                                barThickness: 40
                             }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
+                        indexAxis: undefined,
                         plugins: {
                             legend: {
                                 display: true,
+                                position: 'top',
                                 labels: {
-                                    font: { size: 12, weight: 600 },
-                                    padding: 15
+                                    font: { size: 13, weight: 500 },
+                                    padding: 20,
+                                    usePointStyle: true,
+                                    boxWidth: 8
                                 }
                             }
                         },
@@ -744,7 +793,23 @@
                             y: {
                                 beginAtZero: true,
                                 ticks: {
-                                    stepSize: 5
+                                    font: { size: 12 },
+                                    callback: function(value) {
+                                        return '$' + value + 'k';
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)',
+                                    drawBorder: false
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false,
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    font: { size: 12 }
                                 }
                             }
                         }
