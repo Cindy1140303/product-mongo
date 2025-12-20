@@ -163,17 +163,15 @@
         
         /* 側邊欄導航按鈕樣式 */
         .nav-btn {
-            background-color: #ffffff !important;
+            background-color: transparent !important;
             color: #374151 !important;
-            border: 1px solid #e5e7eb;
+            border: none;
             transition: all 0.3s ease;
         }
         
         .nav-btn:hover {
             background-color: #d1fae5 !important;
             color: #10b981 !important;
-            border-color: #10b981;
-            font-weight: 500;
         }
         
         .nav-btn.active-dashboard,
@@ -183,7 +181,6 @@
         .nav-btn.active-contacts {
             background-color: #10b981 !important;
             color: #ffffff !important;
-            border-color: #10b981;
             font-weight: 600;
         }
         
@@ -193,7 +190,6 @@
         .nav-btn.active-customers:hover,
         .nav-btn.active-contacts:hover {
             background-color: #059669 !important;
-            border-color: #059669;
         }
     </style>
 </head>
@@ -213,7 +209,7 @@
         <nav class="flex flex-col p-4 space-y-2">
             <button onclick="changePage('dashboard')" class="nav-btn group flex items-center p-3 rounded-lg transition duration-150 active-dashboard">
                 <i data-lucide="layout-grid" class="w-5 h-5 mr-3"></i>
-                <span class="sidebar-text">儀表板 (到期產品)</span>
+                <span class="sidebar-text">儀表板</span>
             </button>
             <button onclick="changePage('orders')" class="nav-btn group flex items-center p-3 rounded-lg transition duration-150 active-orders">
                 <i data-lucide="clipboard-list" class="w-5 h-5 mr-3"></i>

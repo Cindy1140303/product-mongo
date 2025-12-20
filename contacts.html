@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>內部聯絡人建立 - 產品及訂單管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+        .scrollbar-hidden::-webkit-scrollbar { display: none; }
+        .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+        button { font-size: 18px !important; }
+        table { font-size: 14px !important; }
+        .nav-btn { background-color: transparent !important; color: #374151 !important; border: none; transition: all 0.3s ease; }
+        .nav-btn:hover { background-color: #d1fae5 !important; color: #10b981 !important; }
+        .nav-btn.active { background-color: #10b981 !important; color: #ffffff !important; font-weight: 600; }
+    </style>
+</head>
+<body class="bg-gray-50 flex min-h-screen">
+    <div class="w-64 bg-white shadow-xl h-screen sticky top-0">
+        <div class="p-6 border-b">
+            <h1 class="text-2xl font-bold text-gray-800">管理儀表板</h1>
+            <p class="text-sm text-gray-500 mt-1">聯絡人管理</p>
+        </div>
+        <nav class="flex flex-col p-4 space-y-2">
+            <a href="dashboard.html" class="nav-btn flex items-center p-3 rounded-lg"><i data-lucide="layout-grid" class="w-5 h-5 mr-3"></i>儀表板</a>
+            <a href="orders.html" class="nav-btn flex items-center p-3 rounded-lg"><i data-lucide="clipboard-list" class="w-5 h-5 mr-3"></i>產品訂單管理</a>
+            <a href="products.html" class="nav-btn flex items-center p-3 rounded-lg"><i data-lucide="package" class="w-5 h-5 mr-3"></i>產品規格登錄</a>
+            <a href="customers.html" class="nav-btn flex items-center p-3 rounded-lg"><i data-lucide="users" class="w-5 h-5 mr-3"></i>客戶管理</a>
+            <a href="contacts.html" class="nav-btn active flex items-center p-3 rounded-lg"><i data-lucide="contact" class="w-5 h-5 mr-3"></i>內部聯絡人建立</a>
+        </nav>
+    </div>
+
+    <main class="flex-1 p-8 overflow-y-auto scrollbar-hidden">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
+            內部聯絡人建立
+            <button onclick="showContactForm()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"><i data-lucide="plus" class="w-5 h-5 mr-1 inline"></i>新增聯絡人</button>
+        </h2>
+
+        <div class="mb-4 flex gap-3">
+            <input type="text" id="contact-search" oninput="filterContacts(this.value)" placeholder="按姓名或部門搜尋..." class="flex-1 p-3 border border-gray-300 rounded-lg">
+            <button onclick="clearSearch()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg"><i data-lucide="x" class="w-5 h-5 inline"></i>清除</button>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h3 class="text-xl font-semibold mb-4">聯絡人列表 (<span id="contactCount">0</span> 筆)</h3>
+            <div class="overflow-x-auto" id="contactsContainer">
+                <p class="text-gray-500 p-4 text-center">加載中...</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal-container" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden justify-center items-center z-50">
+        <div id="modal-content" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+        const USER_ID = 'default-user';
+        let contacts = [];
+
+        async function apiRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': USER_ID, ...options.headers },
+                    ...options
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('API 錯誤:', error);
+                return { data: [] };
+            }
+        }
+
+        function showMessage(type, message) {
+            const box = document.createElement('div');
+            box.className = `fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white z-50 transition-all ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            box.textContent = message;
+            document.body.appendChild(box);
+            setTimeout(() => box.remove(), 3000);
+        }
+
+        async function loadContacts() {
+            const res = await apiRequest('/contacts');
+            contacts = res.data || [];
+            renderContacts();
+        }
+
+        function renderContacts(searchTerm = '') {
+            const filtered = contacts.filter(c =>
+                c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                c.department.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            document.getElementById('contactCount').textContent = filtered.length;
+            const container = document.getElementById('contactsContainer');
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 p-4 text-center">無內部聯絡人資料。</p>';
+            } else {
+                container.innerHTML = `
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">姓名</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">部門</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">電話/分機</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">電子郵件</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            ${filtered.map(c => `
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${c.name}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.department}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.phone}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.email}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                        <button onclick="showContactForm('${c.id}')" class="text-green-600 hover:text-green-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                        <button onclick="deleteContact('${c.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        function filterContacts(searchTerm) {
+            renderContacts(searchTerm);
+        }
+
+        function clearSearch() {
+            document.getElementById('contact-search').value = '';
+            renderContacts();
+        }
+
+        function showContactForm(id = null) {
+            const contact = id ? contacts.find(c => c.id === id) : {};
+            const isEdit = !!id;
+
+            document.getElementById('modal-content').innerHTML = `
+                <h3 class="text-2xl font-bold mb-4">${isEdit ? '編輯內部聯絡人' : '新增內部聯絡人'}</h3>
+                <form onsubmit="handleContactSubmit(event, '${id || ''}')" class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-700">姓名</label>
+                    <input type="text" id="name" value="${contact.name || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">部門</label>
+                    <input type="text" id="department" value="${contact.department || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700">電話/分機</label>
+                        <input type="text" id="phone" value="${contact.phone || ''}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                        <div><label class="block text-sm font-medium text-gray-700">電子郵件</label>
+                        <input type="email" id="email" value="${contact.email || ''}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-4">
+                        <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">取消</button>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">${isEdit ? '保存修改' : '新增聯絡人'}</button>
+                    </div>
+                </form>
+            `;
+            document.getElementById('modal-container').classList.remove('hidden');
+            document.getElementById('modal-container').classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('modal-container').classList.add('hidden');
+            document.getElementById('modal-container').classList.remove('flex');
+        }
+
+        async function handleContactSubmit(event, id) {
+            event.preventDefault();
+            const data = {
+                name: document.getElementById('name').value,
+                department: document.getElementById('department').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+            };
+
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const endpoint = id ? `/contacts/${id}` : '/contacts';
+                await apiRequest(endpoint, {method, body: JSON.stringify(data)});
+                showMessage('success', id ? '更新成功' : '新增成功');
+                closeModal();
+                loadContacts();
+            } catch (error) {
+                showMessage('error', '操作失敗');
+            }
+        }
+
+        async function deleteContact(id) {
+            if (!confirm('確定要刪除嗎？')) return;
+            try {
+                await apiRequest(`/contacts/${id}`, {method: 'DELETE'});
+                showMessage('success', '刪除成功');
+                loadContacts();
+            } catch (error) {
+                showMessage('error', '刪除失敗');
+            }
+        }
+
+        document.getElementById('modal-container').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-container') closeModal();
+        });
+
+        loadContacts();
+    </script>
+</body>
+</html>

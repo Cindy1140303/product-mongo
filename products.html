@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>產品規格登錄 - 產品及訂單管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { font-family: 'Inter', sans-serif; }
+        .scrollbar-hidden::-webkit-scrollbar { display: none; }
+        .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+        button { font-size: 18px !important; }
+        table { font-size: 14px !important; }
+        .nav-btn { background-color: transparent !important; color: #374151 !important; border: none; transition: all 0.3s ease; }
+        .nav-btn:hover { background-color: #d1fae5 !important; color: #10b981 !important; }
+        .nav-btn.active { background-color: #10b981 !important; color: #ffffff !important; font-weight: 600; }
+    </style>
+</head>
+<body class="bg-gray-50 flex min-h-screen">
+    <div class="w-64 bg-white shadow-xl h-screen sticky top-0">
+        <div class="p-6 border-b">
+            <h1 class="text-2xl font-bold text-gray-800">管理儀表板</h1>
+            <p class="text-sm text-gray-500 mt-1">產品管理</p>
+        </div>
+        <nav class="flex flex-col p-4 space-y-2">
+            <a href="dashboard.html" class="nav-btn flex items-center p-3 rounded-lg"><i data-lucide="layout-grid" class="w-5 h-5 mr-3"></i>儀表板</a>
+            <a href="orders.html" class="nav-btn flex items-center p-3 rounded-lg"><i data-lucide="clipboard-list" class="w-5 h-5 mr-3"></i>產品訂單管理</a>
+            <a href="products.html" class="nav-btn active flex items-center p-3 rounded-lg"><i data-lucide="package" class="w-5 h-5 mr-3"></i>產品規格登錄</a>
+            <a href="customers.html" class="nav-btn flex items-center p-3 rounded-lg"><i data-lucide="users" class="w-5 h-5 mr-3"></i>客戶管理</a>
+            <a href="contacts.html" class="nav-btn flex items-center p-3 rounded-lg"><i data-lucide="contact" class="w-5 h-5 mr-3"></i>內部聯絡人建立</a>
+        </nav>
+    </div>
+
+    <main class="flex-1 p-8 overflow-y-auto scrollbar-hidden">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
+            產品規格登錄
+            <button onclick="showProductForm()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"><i data-lucide="plus" class="w-5 h-5 mr-1 inline"></i>新增規格</button>
+        </h2>
+
+        <div class="mb-6 flex gap-3">
+            <div class="flex-1 relative">
+                <input type="text" id="product-search" placeholder="輸入產品名稱..." class="w-full p-3 pl-10 border border-gray-300 rounded-lg">
+                <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-3.5"></i>
+            </div>
+            <button onclick="filterProducts()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg"><i data-lucide="search" class="w-5 h-5 inline"></i>查詢</button>
+            <button onclick="clearSearch()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg"><i data-lucide="x" class="w-5 h-5 inline"></i>清除</button>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h3 class="text-xl font-semibold mb-4">產品規格列表 (<span id="productCount">0</span> 筆)</h3>
+            <div class="overflow-x-auto" id="productsContainer">
+                <p class="text-gray-500 p-4 text-center">加載中...</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal-container" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden justify-center items-center z-50">
+        <div id="modal-content" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+        const USER_ID = 'default-user';
+        let products = [];
+
+        async function apiRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': USER_ID, ...options.headers },
+                    ...options
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('API 錯誤:', error);
+                return { data: [] };
+            }
+        }
+
+        function showMessage(type, message) {
+            const box = document.createElement('div');
+            box.className = `fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white z-50 transition-all ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            box.textContent = message;
+            document.body.appendChild(box);
+            setTimeout(() => box.remove(), 3000);
+        }
+
+        function formatDate(isoString) {
+            if (!isoString) return '-';
+            if (isoString.match(/^\d{4}-\d{2}-\d{2}$/)) return isoString;
+            try { return new Date(isoString).toISOString().split('T')[0]; } catch { return isoString; }
+        }
+
+        async function loadProducts() {
+            const res = await apiRequest('/products');
+            products = res.data || [];
+            renderProducts();
+        }
+
+        function renderProducts(searchTerm = '') {
+            const filtered = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+            document.getElementById('productCount').textContent = filtered.length;
+            const container = document.getElementById('productsContainer');
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 p-4 text-center">無產品規格資料。</p>';
+            } else {
+                container.innerHTML = `
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">名稱</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">成本價</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">售價</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">序號範本</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">個數</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">有效期限</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            ${filtered.map(p => `
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">$${p.costPrice.toFixed(2)}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">$${p.sellingPrice.toFixed(2)}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.serialPrefix || '-'}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.quantity}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(p.expirationDate)}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                        <button onclick="showProductForm('${p.id}')" class="text-green-600 hover:text-green-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                        <button onclick="deleteProduct('${p.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        function filterProducts() {
+            const search = document.getElementById('product-search').value;
+            renderProducts(search);
+        }
+
+        function clearSearch() {
+            document.getElementById('product-search').value = '';
+            renderProducts();
+        }
+
+        function showProductForm(id = null) {
+            const product = id ? products.find(p => p.id === id) : {};
+            const isEdit = !!id;
+
+            document.getElementById('modal-content').innerHTML = `
+                <h3 class="text-2xl font-bold mb-4">${isEdit ? '編輯產品規格' : '新增產品規格'}</h3>
+                <form onsubmit="handleProductSubmit(event, '${id || ''}')" class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-700">產品名稱</label>
+                    <input type="text" id="name" value="${product.name || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">產品內容</label>
+                    <textarea id="content" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">${product.content || ''}</textarea></div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700">成本價格</label>
+                        <input type="number" id="costPrice" value="${product.costPrice || ''}" required step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                        <div><label class="block text-sm font-medium text-gray-700">售價</label>
+                        <input type="number" id="sellingPrice" value="${product.sellingPrice || ''}" required step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                        <div><label class="block text-sm font-medium text-gray-700">個數</label>
+                        <input type="number" id="quantity" value="${product.quantity || 0}" required min="0" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700">序號範本</label>
+                        <input type="text" id="serialPrefix" value="${product.serialPrefix || ''}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                        <div><label class="block text-sm font-medium text-gray-700">有效期限</label>
+                        <input type="date" id="expirationDate" value="${product.expirationDate || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></div>
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-4">
+                        <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">取消</button>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">${isEdit ? '保存修改' : '新增規格'}</button>
+                    </div>
+                </form>
+            `;
+            document.getElementById('modal-container').classList.remove('hidden');
+            document.getElementById('modal-container').classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('modal-container').classList.add('hidden');
+            document.getElementById('modal-container').classList.remove('flex');
+        }
+
+        async function handleProductSubmit(event, id) {
+            event.preventDefault();
+            const data = {
+                name: document.getElementById('name').value,
+                content: document.getElementById('content').value,
+                costPrice: parseFloat(document.getElementById('costPrice').value),
+                sellingPrice: parseFloat(document.getElementById('sellingPrice').value),
+                quantity: parseInt(document.getElementById('quantity').value),
+                serialPrefix: document.getElementById('serialPrefix').value,
+                expirationDate: document.getElementById('expirationDate').value,
+            };
+
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const endpoint = id ? `/products/${id}` : '/products';
+                await apiRequest(endpoint, {method, body: JSON.stringify(data)});
+                showMessage('success', id ? '更新成功' : '新增成功');
+                closeModal();
+                loadProducts();
+            } catch (error) {
+                showMessage('error', '操作失敗');
+            }
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('確定要刪除嗎？')) return;
+            try {
+                await apiRequest(`/products/${id}`, {method: 'DELETE'});
+                showMessage('success', '刪除成功');
+                loadProducts();
+            } catch (error) {
+                showMessage('error', '刪除失敗');
+            }
+        }
+
+        document.getElementById('modal-container').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-container') closeModal();
+        });
+
+        loadProducts();
+    </script>
+</body>
+</html>
