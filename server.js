@@ -18,6 +18,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 app.use('/pages', express.static(__dirname + '/pages'));
 
+// 設置 app.html 作為默認前端
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/app.html');
+});
+
 // 請求日誌中介軟體
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
