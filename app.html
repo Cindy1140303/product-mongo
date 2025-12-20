@@ -9,40 +9,31 @@
     <!-- 載入 Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* 自定義字體為 Inter */
         :root {
             font-family: 'Inter', sans-serif;
         }
-        /* 隱藏原生捲軸但允許滾動 */
         .scrollbar-hidden::-webkit-scrollbar {
             display: none;
         }
         .scrollbar-hidden {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
-        /* 定義主要配色 */
         .bg-primary { background-color: #10b981; }
         .text-primary { color: #10b981; }
         .border-primary { border-color: #10b981; }
-        /* 導航按鈕 - 只在 hover 和 active 時呈現綠色 */
         .nav-btn { background-color: transparent !important; color: #4b5563 !important; border: none !important; transition: all 0.3s ease !important; }
         .nav-btn:hover { background-color: #10b981 !important; color: #ffffff !important; }
         .nav-btn.active { background-color: #10b981 !important; color: #ffffff !important; font-weight: 600 !important; }
-        .nav-btn.active:hover { background-color: #059669 !important; color: #ffffff !important; }
-        /* 表格列 - 只在 hover 時呈現綠色 */
-        .table-row { background-color: transparent !important; transition: all 0.3s ease !important; }
         .table-row:hover { background-color: #10b981 !important; color: #ffffff !important; }
-        .table-row:hover td { color: #ffffff !important; }
     </style>
 </head>
 <body class="bg-gray-50 flex min-h-screen">
-
     <!-- 側邊欄導航 -->
     <div id="sidebar" class="w-64 bg-white shadow-xl h-screen sticky top-0 flex flex-col transition-all duration-300">
         <div class="p-6 border-b">
             <h1 class="text-2xl font-bold text-gray-800">管理儀表板</h1>
-            <p class="text-sm text-gray-500 mt-1" id="user-info">載入使用者...</p>
+            <p class="text-sm text-gray-500 mt-1" id="user-info">載入中...</p>
         </div>
         <nav class="flex flex-col p-4 space-y-2">
             <button onclick="changePage('dashboard')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-dashboard">
@@ -71,33 +62,28 @@
     <!-- 主要內容區 -->
     <main class="flex-1 p-8 overflow-y-auto scrollbar-hidden">
         <div id="app-content">
-            <!-- 內容將由 JavaScript 動態插入 -->
             <div class="flex justify-center items-center h-full">
                 <p class="text-gray-500">正在載入應用程式...</p>
             </div>
         </div>
     </main>
 
-    <!-- 模態視窗 (通用) -->
+    <!-- 模態視窗 -->
     <div id="modal-container" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden justify-center items-center z-50">
-        <div id="modal-content" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4">
-            <!-- 模態視窗內容由 JS 動態填入 -->
+        <div id="modal-content" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
         </div>
     </div>
 
     <script>
-        // API 基礎路徑 (使用相對路徑，支持 Vercel)
         const API_BASE_URL = '/api';
         const USER_ID = 'default-user';
 
-        // 全域變數
         let currentPage = 'dashboard';
         let products = [];
         let orders = [];
         let customers = [];
         let contacts = [];
 
-        // API 請求函數
         async function apiRequest(endpoint, options = {}) {
             try {
                 const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -115,7 +101,6 @@
             }
         }
 
-        // 加載所有數據
         async function loadAllData() {
             const productsRes = await apiRequest('/products');
             const ordersRes = await apiRequest('/orders');
@@ -131,7 +116,6 @@
             changePage('dashboard');
         }
 
-        // 顯示訊息
         function showMessage(type, message) {
             const box = document.createElement('div');
             box.className = `fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white z-50 transition-all ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
@@ -140,7 +124,6 @@
             setTimeout(() => box.remove(), 3000);
         }
 
-        // 打開/關閉模態
         function openModal(contentHTML) {
             const modalContainer = document.getElementById('modal-container');
             document.getElementById('modal-content').innerHTML = contentHTML;
@@ -154,16 +137,12 @@
             modalContainer.classList.remove('flex');
         }
 
-        // 點擊模態背景關閉
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('modal-container').addEventListener('click', (e) => {
-                if (e.target.id === 'modal-container') {
-                    closeModal();
-                }
-            });
+        document.getElementById('modal-container').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-container') {
+                closeModal();
+            }
         });
 
-        // 切換頁面
         window.changePage = (page) => {
             currentPage = page;
             const navButtons = document.querySelectorAll('.nav-btn');
@@ -198,7 +177,6 @@
             lucide.createIcons();
         };
 
-        // 日期格式化
         function formatDate(isoString) {
             if (!isoString) return '-';
             if (isoString.match(/^\d{4}-\d{2}-\d{2}$/)) return isoString;
@@ -216,7 +194,6 @@
             return Math.round((targetDate.getTime() - today.getTime()) / oneDay);
         }
 
-        // ===== 儀表板 =====
         function renderDashboard() {
             const expiringProducts = products
                 .filter(p => {
@@ -274,7 +251,6 @@
             document.getElementById('app-content').innerHTML = html;
         }
 
-        // ===== 訂單列表 =====
         function renderOrdersPage(searchTerm = '') {
             const filtered = orders.filter(o =>
                 o.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -292,31 +268,31 @@
                     <button onclick="exportOrdersToCsv()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"><i data-lucide="file-text" class="w-5 h-5 mr-1 inline"></i>產生報價單</button>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">訂單列表 (<span id="orderCount">${filtered.length}</span> 筆)</h3>
-                    <div class="overflow-x-auto" id="ordersContainer">
+                    <h3 class="text-xl font-semibold mb-4">訂單列表 (${filtered.length} 筆)</h3>
+                    <div class="overflow-x-auto">
                         ${filtered.length === 0 ? '<p class="text-gray-500 p-4 text-center">無訂單資料。</p>' : `
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50"><tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">產品名稱</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">序號</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">客戶名稱</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">客戶</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">單價</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">個數</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">售價</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">訂單日期</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">總價</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
                                 </tr></thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody>
                                     ${filtered.map(order => `
-                                        <tr class="table-row">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${order.productName}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.serialNumber}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.customerName || '-'}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.quantity}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">$${order.unitPrice.toFixed(2)}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(order.startDate)} 至 ${formatDate(order.endDate)}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                                <button onclick="showOrderForm('${order.id}')" class="text-green-600 hover:text-green-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                                                <button onclick="deleteOrder('${order.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                        <tr class="table-row border-b border-gray-100">
+                                            <td class="px-6 py-3 text-sm text-gray-900">${order.productName}</td>
+                                            <td class="px-6 py-3 text-sm text-gray-600">${order.serialNumber}</td>
+                                            <td class="px-6 py-3 text-sm text-gray-600">${order.customerName}</td>
+                                            <td class="px-6 py-3 text-sm text-gray-600">$${order.unitPrice?.toFixed(2) || 0}</td>
+                                            <td class="px-6 py-3 text-sm text-gray-600">${order.quantity}</td>
+                                            <td class="px-6 py-3 text-sm font-medium text-gray-900">$${(order.unitPrice * order.quantity).toFixed(2)}</td>
+                                            <td class="px-6 py-3 text-sm space-x-2">
+                                                <button onclick="showOrderForm('${order.id}')" class="text-blue-600 hover:text-blue-800">編輯</button>
+                                                <button onclick="deleteOrder('${order.id}')" class="text-red-600 hover:text-red-800">刪除</button>
                                             </td>
                                         </tr>
                                     `).join('')}
@@ -337,13 +313,20 @@
             const modal = `
                 <h3 class="text-2xl font-bold mb-4">${id ? '編輯訂單' : '新增訂單'}</h3>
                 <form onsubmit="handleOrderSubmit(event, '${id || ''}')" class="space-y-4">
-                    <select id="productName" required class="w-full p-2 border border-gray-300 rounded"><option>請選擇產品</option>${productOptions}</select>
-                    <input type="text" id="serialNumber" value="${order.serialNumber || ''}" placeholder="產品序號" required class="w-full p-2 border border-gray-300 rounded">
-                    <input type="number" id="unitPrice" value="${order.unitPrice || ''}" placeholder="售價" required step="0.01" class="w-full p-2 border border-gray-300 rounded">
-                    <input type="number" id="quantity" value="${order.quantity || 1}" placeholder="個數" required class="w-full p-2 border border-gray-300 rounded">
-                    <input type="date" id="startDate" value="${formatDate(order.startDate) || formatDate(new Date())}" required class="w-full p-2 border border-gray-300 rounded">
-                    <input type="date" id="endDate" value="${formatDate(order.endDate) || ''}" required class="w-full p-2 border border-gray-300 rounded">
-                    <select id="customerName" required class="w-full p-2 border border-gray-300 rounded"><option>請選擇客戶</option>${customerOptions}</select>
+                    <div><label class="block text-sm font-medium text-gray-700">產品名稱</label>
+                    <select id="productName" required class="mt-1 block w-full p-2 border border-gray-300 rounded"><option>請選擇產品</option>${productOptions}</select></div>
+                    <div><label class="block text-sm font-medium text-gray-700">產品序號</label>
+                    <input type="text" id="serialNumber" value="${order.serialNumber || ''}" placeholder="產品序號" required class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">售價</label>
+                    <input type="number" id="unitPrice" value="${order.unitPrice || ''}" placeholder="售價" required step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">個數</label>
+                    <input type="number" id="quantity" value="${order.quantity || 1}" placeholder="個數" required class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">開始日期</label>
+                    <input type="date" id="startDate" value="${formatDate(order.startDate) || formatDate(new Date())}" required class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">結束日期</label>
+                    <input type="date" id="endDate" value="${formatDate(order.endDate) || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">客戶名稱</label>
+                    <select id="customerName" required class="mt-1 block w-full p-2 border border-gray-300 rounded"><option>請選擇客戶</option>${customerOptions}</select></div>
                     <div class="flex justify-end space-x-2">
                         <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">取消</button>
                         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">${id ? '保存修改' : '新增訂單'}</button>
@@ -386,18 +369,17 @@
                 return;
             }
             const headers = ["訂單ID", "產品名稱", "產品序號", "客戶名稱", "單價", "個數", "總價"];
-            let csv = headers.join(',') + '\\n';
+            let csv = headers.join(',') + '\n';
             orders.forEach(order => {
-                csv += [order.id, order.productName, order.serialNumber, order.customerName, order.unitPrice.toFixed(2), order.quantity, (order.unitPrice * order.quantity).toFixed(2)].join(',') + '\\n';
+                csv += [order.id, order.productName, order.serialNumber, order.customerName, order.unitPrice.toFixed(2), order.quantity, (order.unitPrice * order.quantity).toFixed(2)].join(',') + '\n';
             });
-            const blob = new Blob([`\\ufeff${csv}`], {type: 'text/csv;charset=utf-8;'});
+            const blob = new Blob([`\ufeff${csv}`], {type: 'text/csv;charset=utf-8;'});
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = `Order_${formatDate(new Date())}.csv`;
             link.click();
         };
 
-        // ===== 產品列表 =====
         function renderProductsPage(searchTerm = '') {
             const filtered = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
             
@@ -412,30 +394,28 @@
                     <button onclick="document.getElementById('product-search').value=''; renderProductsPage('')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">清除</button>
                 </div>
                 <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">產品規格列表 (<span id="productCount">${filtered.length}</span> 筆)</h3>
+                    <h3 class="text-xl font-semibold mb-4">產品規格列表 (${filtered.length} 筆)</h3>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50"><tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">名稱</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">成本價</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">售價</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">序號範本</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">個數</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">有效期限</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">到期日</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
                             </tr></thead>
                             <tbody>
                                 ${filtered.map(p => `
                                     <tr class="table-row border-b border-gray-100">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">$${p.costPrice.toFixed(2)}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">$${p.sellingPrice.toFixed(2)}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.serialPrefix || '-'}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.quantity}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(p.expirationDate)}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                            <button onclick="showProductForm('${p.id}')" class="text-green-600 hover:text-green-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                                            <button onclick="deleteProduct('${p.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                        <td class="px-6 py-3 text-sm text-gray-900 font-medium">${p.name}</td>
+                                        <td class="px-6 py-3 text-sm text-gray-600">$${p.costPrice?.toFixed(2) || 0}</td>
+                                        <td class="px-6 py-3 text-sm text-gray-600">$${p.sellingPrice?.toFixed(2) || 0}</td>
+                                        <td class="px-6 py-3 text-sm text-gray-600">${p.quantity}</td>
+                                        <td class="px-6 py-3 text-sm text-gray-600">${formatDate(p.expirationDate)}</td>
+                                        <td class="px-6 py-3 text-sm space-x-2">
+                                            <button onclick="showProductForm('${p.id}')" class="text-blue-600 hover:text-blue-800">編輯</button>
+                                            <button onclick="deleteProduct('${p.id}')" class="text-red-600 hover:text-red-800">刪除</button>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -452,12 +432,16 @@
             const modal = `
                 <h3 class="text-2xl font-bold mb-4">${id ? '編輯產品規格' : '新增產品規格'}</h3>
                 <form onsubmit="handleProductSubmit(event, '${id || ''}')" class="space-y-4">
-                    <input type="text" id="name" value="${product.name || ''}" placeholder="產品名稱" required class="w-full p-2 border border-gray-300 rounded">
-                    <input type="number" id="costPrice" value="${product.costPrice || ''}" placeholder="成本價" required step="0.01" class="w-full p-2 border border-gray-300 rounded">
-                    <input type="number" id="sellingPrice" value="${product.sellingPrice || ''}" placeholder="售價" required step="0.01" class="w-full p-2 border border-gray-300 rounded">
-                    <input type="number" id="quantity" value="${product.quantity || 0}" placeholder="個數" required min="0" class="w-full p-2 border border-gray-300 rounded">
-                    <input type="text" id="serialPrefix" value="${product.serialPrefix || ''}" placeholder="序號範本" class="w-full p-2 border border-gray-300 rounded">
-                    <input type="date" id="expirationDate" value="${formatDate(product.expirationDate) || ''}" required class="w-full p-2 border border-gray-300 rounded">
+                    <div><label class="block text-sm font-medium text-gray-700">名稱</label>
+                    <input type="text" id="name" value="${product.name || ''}" placeholder="產品名稱" required class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">成本價</label>
+                    <input type="number" id="costPrice" value="${product.costPrice || ''}" placeholder="成本價" required step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">售價</label>
+                    <input type="number" id="sellingPrice" value="${product.sellingPrice || ''}" placeholder="售價" required step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">個數</label>
+                    <input type="number" id="quantity" value="${product.quantity || 0}" placeholder="個數" required min="0" class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">到期日期</label>
+                    <input type="date" id="expirationDate" value="${formatDate(product.expirationDate) || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
                     <div class="flex justify-end space-x-2">
                         <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">取消</button>
                         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">${id ? '保存修改' : '新增規格'}</button>
@@ -474,7 +458,6 @@
                 costPrice: parseFloat(document.getElementById('costPrice').value),
                 sellingPrice: parseFloat(document.getElementById('sellingPrice').value),
                 quantity: parseInt(document.getElementById('quantity').value),
-                serialPrefix: document.getElementById('serialPrefix').value,
                 expirationDate: document.getElementById('expirationDate').value,
             };
             
@@ -493,7 +476,6 @@
             loadAllData();
         };
 
-        // ===== 客戶列表 =====
         function renderCustomersPage(searchTerm = '') {
             const filtered = customers.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
             
@@ -508,22 +490,22 @@
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50"><tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">客戶名稱</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">名稱</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">聯絡人</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">電話</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">電子郵件</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">郵件</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
                             </tr></thead>
                             <tbody>
                                 ${filtered.map(c => `
                                     <tr class="table-row border-b border-gray-100">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${c.name}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.contactPerson}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.phone}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.email}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                            <button onclick="showCustomerForm('${c.id}')" class="text-green-600 hover:text-green-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                                            <button onclick="deleteCustomer('${c.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                        <td class="px-6 py-3 text-sm text-gray-900 font-medium">${c.name}</td>
+                                        <td class="px-6 py-3 text-sm text-gray-600">${c.contactPerson}</td>
+                                        <td class="px-6 py-3 text-sm text-gray-600">${c.phone}</td>
+                                        <td class="px-6 py-3 text-sm text-gray-600">${c.email}</td>
+                                        <td class="px-6 py-3 text-sm space-x-2">
+                                            <button onclick="showCustomerForm('${c.id}')" class="text-blue-600 hover:text-blue-800">編輯</button>
+                                            <button onclick="deleteCustomer('${c.id}')" class="text-red-600 hover:text-red-800">刪除</button>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -540,10 +522,14 @@
             const modal = `
                 <h3 class="text-2xl font-bold mb-4">${id ? '編輯客戶' : '新增客戶'}</h3>
                 <form onsubmit="handleCustomerSubmit(event, '${id || ''}')" class="space-y-4">
-                    <input type="text" id="name" value="${customer.name || ''}" placeholder="客戶名稱" required class="w-full p-2 border border-gray-300 rounded">
-                    <input type="text" id="contactPerson" value="${customer.contactPerson || ''}" placeholder="聯絡人" required class="w-full p-2 border border-gray-300 rounded">
-                    <input type="text" id="phone" value="${customer.phone || ''}" placeholder="電話" class="w-full p-2 border border-gray-300 rounded">
-                    <input type="email" id="email" value="${customer.email || ''}" placeholder="電子郵件" class="w-full p-2 border border-gray-300 rounded">
+                    <div><label class="block text-sm font-medium text-gray-700">名稱</label>
+                    <input type="text" id="name" value="${customer.name || ''}" placeholder="客戶名稱" required class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">聯絡人</label>
+                    <input type="text" id="contactPerson" value="${customer.contactPerson || ''}" placeholder="聯絡人" required class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">電話</label>
+                    <input type="text" id="phone" value="${customer.phone || ''}" placeholder="電話" class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">郵件</label>
+                    <input type="email" id="email" value="${customer.email || ''}" placeholder="郵件" class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
                     <div class="flex justify-end space-x-2">
                         <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">取消</button>
                         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">${id ? '保存修改' : '新增客戶'}</button>
@@ -577,7 +563,6 @@
             loadAllData();
         };
 
-        // ===== 聯絡人列表 =====
         function renderContactsPage(searchTerm = '') {
             const filtered = contacts.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
             
@@ -594,20 +579,20 @@
                             <thead class="bg-gray-50"><tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">姓名</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">部門</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">電話/分機</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">電子郵件</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">電話</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">郵件</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">操作</th>
                             </tr></thead>
                             <tbody>
                                 ${filtered.map(c => `
                                     <tr class="table-row border-b border-gray-100">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${c.name}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.department}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.phone}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.email}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                            <button onclick="showContactForm('${c.id}')" class="text-green-600 hover:text-green-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                                            <button onclick="deleteContact('${c.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                        <td class="px-6 py-3 text-sm text-gray-900 font-medium">${c.name}</td>
+                                        <td class="px-6 py-3 text-sm text-gray-600">${c.department}</td>
+                                        <td class="px-6 py-3 text-sm text-gray-600">${c.phone}</td>
+                                        <td class="px-6 py-3 text-sm text-gray-600">${c.email}</td>
+                                        <td class="px-6 py-3 text-sm space-x-2">
+                                            <button onclick="showContactForm('${c.id}')" class="text-blue-600 hover:text-blue-800">編輯</button>
+                                            <button onclick="deleteContact('${c.id}')" class="text-red-600 hover:text-red-800">刪除</button>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -624,10 +609,14 @@
             const modal = `
                 <h3 class="text-2xl font-bold mb-4">${id ? '編輯聯絡人' : '新增聯絡人'}</h3>
                 <form onsubmit="handleContactSubmit(event, '${id || ''}')" class="space-y-4">
-                    <input type="text" id="name" value="${contact.name || ''}" placeholder="姓名" required class="w-full p-2 border border-gray-300 rounded">
-                    <input type="text" id="department" value="${contact.department || ''}" placeholder="部門" required class="w-full p-2 border border-gray-300 rounded">
-                    <input type="text" id="phone" value="${contact.phone || ''}" placeholder="電話/分機" class="w-full p-2 border border-gray-300 rounded">
-                    <input type="email" id="email" value="${contact.email || ''}" placeholder="電子郵件" class="w-full p-2 border border-gray-300 rounded">
+                    <div><label class="block text-sm font-medium text-gray-700">姓名</label>
+                    <input type="text" id="name" value="${contact.name || ''}" placeholder="姓名" required class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">部門</label>
+                    <input type="text" id="department" value="${contact.department || ''}" placeholder="部門" required class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">電話</label>
+                    <input type="text" id="phone" value="${contact.phone || ''}" placeholder="電話/分機" class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
+                    <div><label class="block text-sm font-medium text-gray-700">郵件</label>
+                    <input type="email" id="email" value="${contact.email || ''}" placeholder="郵件" class="mt-1 block w-full p-2 border border-gray-300 rounded"></div>
                     <div class="flex justify-end space-x-2">
                         <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">取消</button>
                         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">${id ? '保存修改' : '新增聯絡人'}</button>
@@ -661,967 +650,7 @@
             loadAllData();
         };
 
-        // 初始化
         window.addEventListener('DOMContentLoaded', loadAllData);
-    </script>
-
-        // 設置 Firebase 日誌等級以便除錯
-        setLogLevel('Debug');
-
-        // --- 全域變數初始化 (強制使用 Canvas 環境提供的變數) ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        let firebaseConfig;
-        try {
-            firebaseConfig = JSON.parse(__firebase_config);
-        } catch (e) {
-            console.error("Firebase config is missing or invalid. Using placeholder.", e);
-            // 預留一個功能性的空配置
-            firebaseConfig = {};
-        }
-
-        let app;
-        let db;
-        let auth;
-        let userId = null;
-        let isAuthReady = false;
-
-        // 應用程式狀態
-        let currentPage = 'dashboard';
-        let products = [];
-        let orders = [];
-        let customers = [];
-        let contacts = [];
-
-        let currentProduct = null;
-        let currentOrder = null;
-        let currentCustomer = null;
-        let currentContact = null;
-
-        // 啟動 Firebase 應用程式
-        if (Object.keys(firebaseConfig).length > 0) {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-        } else {
-            // 如果配置失敗，使用假資料模式
-            console.warn("Using mock data mode because Firebase config is invalid.");
-            isAuthReady = true;
-            userId = 'mock-user';
-            // 假資料可以放這裡
-        }
-
-        // --- Firebase 身份驗證和初始化 ---
-        const initAuth = async () => {
-            if (auth) {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                        console.log("Signed in with custom token.");
-                    } else {
-                        await signInAnonymously(auth);
-                        console.log("Signed in anonymously.");
-                    }
-                } catch (error) {
-                    console.error("Firebase authentication failed:", error);
-                    // 即使失敗，也嘗試設置匿名用戶 ID
-                    userId = 'unauth-' + crypto.randomUUID();
-                }
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        document.getElementById('user-info').textContent = `使用者 ID: ${userId.substring(0, 8)}...`;
-                        isAuthReady = true;
-                        startDataListeners();
-                        changePage(currentPage);
-                    } else {
-                        // 處理登出或匿名用戶情況
-                        userId = crypto.randomUUID();
-                        document.getElementById('user-info').textContent = `使用者 ID: ${userId.substring(0, 8)}... (匿名)`;
-                        isAuthReady = true;
-                        startDataListeners();
-                        changePage(currentPage);
-                    }
-                });
-            } else {
-                // Mock 模式下直接開始
-                document.getElementById('user-info').textContent = `使用者 ID: ${userId} (模擬)`;
-                changePage(currentPage);
-            }
-        };
-
-        // --- Firestore 集合路徑建構器 ---
-        const getCollectionPath = (collectionName) => {
-            return `artifacts/${appId}/users/${userId}/${collectionName}`;
-        };
-
-        // --- 資料即時監聽 (onSnapshot) ---
-        const startDataListeners = () => {
-            if (!db || !isAuthReady || !userId) return;
-
-            // 1. 產品規格監聽
-            onSnapshot(collection(db, getCollectionPath('products')), (snapshot) => {
-                products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                console.log("Products updated:", products.length);
-                if (currentPage === 'products') renderProductsPage();
-                if (currentPage === 'dashboard') renderDashboard();
-            });
-
-            // 2. 訂單監聽
-            onSnapshot(collection(db, getCollectionPath('orders')), (snapshot) => {
-                orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                console.log("Orders updated:", orders.length);
-                if (currentPage === 'orders') renderOrdersPage();
-                if (currentPage === 'dashboard') renderDashboard();
-            });
-
-            // 3. 客戶監聽
-            onSnapshot(collection(db, getCollectionPath('customers')), (snapshot) => {
-                customers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                console.log("Customers updated:", customers.length);
-                if (currentPage === 'customers') renderCustomersPage();
-                if (currentPage === 'orders') renderOrdersPage(); // 訂單可能需要客戶名稱下拉選單
-            });
-
-            // 4. 聯絡人監聽
-            onSnapshot(collection(db, getCollectionPath('contacts')), (snapshot) => {
-                contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                console.log("Contacts updated:", contacts.length);
-                if (currentPage === 'contacts') renderContactsPage();
-            });
-        };
-
-        // --- 核心 CRUD 操作 ---
-
-        /**
-         * 保存/更新文檔
-         * @param {string} collectionName - 集合名稱
-         * @param {object} data - 要保存的資料
-         * @param {string|null} docId - 如果存在，則更新，否則新增
-         */
-        const saveData = async (collectionName, data, docId = null) => {
-            if (!db || !userId) return console.error("Database not ready.");
-
-            const collectionRef = collection(db, getCollectionPath(collectionName));
-            const baseData = { ...data, updatedAt: new Date().toISOString() };
-
-            try {
-                if (docId) {
-                    await updateDoc(doc(collectionRef, docId), baseData);
-                    showMessage('success', `更新成功: ${collectionName}`);
-                } else {
-                    const newData = { ...baseData, createdAt: new Date().toISOString() };
-                    await addDoc(collectionRef, newData);
-                    showMessage('success', `新增成功: ${collectionName}`);
-                }
-                closeModal();
-            } catch (e) {
-                console.error(`Error saving ${collectionName}:`, e);
-                showMessage('error', `儲存失敗: ${e.message}`);
-            }
-        };
-
-        /**
-         * 刪除文檔
-         * @param {string} collectionName - 集合名稱
-         * @param {string} docId - 要刪除的文檔 ID
-         */
-        const deleteData = async (collectionName, docId) => {
-            if (!db || !userId) return console.error("Database not ready.");
-            if (!window.confirm("確定要刪除這筆資料嗎？此操作無法恢復。")) return;
-
-            try {
-                const docRef = doc(db, getCollectionPath(collectionName), docId);
-                await deleteDoc(docRef);
-                showMessage('success', `刪除成功: ${collectionName}`);
-            } catch (e) {
-                console.error(`Error deleting ${collectionName}:`, e);
-                showMessage('error', `刪除失敗: ${e.message}`);
-            }
-        };
-
-
-        // --- UI/UX 通用函式 ---
-
-        /**
-         * 顯示訊息提示
-         * @param {string} type - 'success' or 'error'
-         * @param {string} message - 訊息內容
-         */
-        const showMessage = (type, message) => {
-            const messageBox = document.createElement('div');
-            messageBox.className = `fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white z-50 transition-all duration-300 transform translate-y-0 opacity-100 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
-            messageBox.textContent = message;
-
-            document.body.appendChild(messageBox);
-
-            setTimeout(() => {
-                messageBox.classList.add('translate-y-full', 'opacity-0');
-                messageBox.addEventListener('transitionend', () => messageBox.remove());
-            }, 3000);
-        };
-
-        const openModal = (contentHTML) => {
-            const modalContainer = document.getElementById('modal-container');
-            document.getElementById('modal-content').innerHTML = contentHTML;
-            modalContainer.classList.remove('hidden');
-            modalContainer.classList.add('flex');
-        };
-
-        const closeModal = () => {
-            const modalContainer = document.getElementById('modal-container');
-            modalContainer.classList.add('hidden');
-            modalContainer.classList.remove('flex');
-            // 清除當前編輯狀態
-            currentProduct = null;
-            currentOrder = null;
-            currentCustomer = null;
-            currentContact = null;
-        };
-        // 點擊模態背景關閉
-        document.getElementById('modal-container').addEventListener('click', (e) => {
-            if (e.target.id === 'modal-container') {
-                closeModal();
-            }
-        });
-
-        // --- 導航與渲染主畫面 ---
-
-        /**
-         * 切換主要頁面
-         * @param {string} page - 要切換到的頁面名稱
-         */
-        window.changePage = (page) => {
-            currentPage = page;
-            const contentDiv = document.getElementById('app-content');
-            const navButtons = document.querySelectorAll('.nav-btn');
-
-            navButtons.forEach(btn => {
-                btn.classList.remove('bg-indigo-100', 'font-semibold', 'text-primary');
-                if (btn.classList.contains(`active-${page}`)) {
-                    btn.classList.add('bg-indigo-100', 'font-semibold', 'text-primary');
-                }
-            });
-
-            contentDiv.innerHTML = `
-                <div class="flex justify-center items-center h-full min-h-64">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                    <p class="ml-4 text-primary">載入 ${page} 畫面中...</p>
-                </div>
-            `;
-
-            // 根據頁面名稱渲染對應內容
-            switch (page) {
-                case 'dashboard':
-                    renderDashboard();
-                    break;
-                case 'orders':
-                    renderOrdersPage();
-                    break;
-                case 'products':
-                    renderProductsPage();
-                    break;
-                case 'customers':
-                    renderCustomersPage();
-                    break;
-                case 'contacts':
-                    renderContactsPage();
-                    break;
-                default:
-                    contentDiv.innerHTML = '<p class="text-red-500">找不到頁面</p>';
-            }
-            // 重新渲染 Lucide 圖標
-            lucide.createIcons();
-        };
-
-
-        // --- 日期與實用函式 ---
-
-        const formatDate = (isoString) => {
-            if (!isoString) return '-';
-            // 假設日期存儲為 YYYY-MM-DD 格式的字串或 ISO 格式
-            if (isoString.match(/^\d{4}-\d{2}-\d{2}$/)) return isoString;
-            try {
-                return new Date(isoString).toISOString().split('T')[0];
-            } catch (e) {
-                return isoString;
-            }
-        };
-
-        const daysUntil = (dateString) => {
-            const oneDay = 24 * 60 * 60 * 1000;
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const targetDate = new Date(dateString);
-            targetDate.setHours(0, 0, 0, 0);
-
-            if (isNaN(targetDate)) return null;
-
-            const diffDays = Math.round((targetDate.getTime() - today.getTime()) / oneDay);
-            return diffDays;
-        };
-
-
-        // =================================================================
-        // 1. 儀表板 (Dashboard) 畫面
-        // =================================================================
-
-        const renderDashboard = () => {
-            const today = new Date().toISOString().split('T')[0];
-            const expiringProducts = products
-                .filter(p => daysUntil(p.expirationDate) !== null && daysUntil(p.expirationDate) <= 30 && daysUntil(p.expirationDate) >= 0)
-                // 依據到期天數排序，快到期的在前
-                .sort((a, b) => daysUntil(a.expirationDate) - daysUntil(b.expirationDate));
-
-            const totalProducts = products.length;
-            const totalOrders = orders.length;
-            const totalCustomers = customers.length;
-            const totalContacts = contacts.length;
-
-            const contentHTML = `
-                <h2 class="text-3xl font-bold text-gray-800 mb-6">儀表板 (Dashboard)</h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <!-- 統計卡片 -->
-                    ${renderStatCard('package', '總產品規格數', totalProducts, 'green')}
-                    ${renderStatCard('clipboard-list', '總訂單數', totalOrders, 'blue')}
-                    ${renderStatCard('users', '總客戶數', totalCustomers, 'indigo')}
-                    ${renderStatCard('contact', '總聯絡人數', totalContacts, 'yellow')}
-                </div>
-
-                <div class="bg-white p-6 rounded-md shadow-lg">
-                    <h3 class="text-2xl font-semibold mb-4 text-red-600 flex items-center">
-                        <i data-lucide="alert-triangle" class="w-6 h-6 mr-2"></i>
-                        即將到期的產品 (30 天內)
-                    </h3>
-                    ${expiringProducts.length === 0
-                        ? '<p class="text-gray-500 p-4">目前沒有產品即將到期。</p>'
-                        : `
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">產品名稱</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">有效期限</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">剩餘天數</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">剩餘個數</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    ${expiringProducts.map(p => `
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(p.expirationDate)}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                                <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                                                    ${daysUntil(p.expirationDate)} 天
-                                                </span>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.quantity}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    `}
-                </div>
-            `;
-            document.getElementById('app-content').innerHTML = contentHTML;
-            lucide.createIcons();
-        };
-
-        const renderStatCard = (icon, title, value, color) => {
-            let bgColor;
-            switch(color) {
-                case 'green': bgColor = 'bg-green-500'; break;
-                case 'blue': bgColor = 'bg-blue-500'; break;
-                case 'indigo': bgColor = 'bg-indigo-500'; break;
-                case 'yellow': bgColor = 'bg-yellow-500'; break;
-                default: bgColor = 'bg-gray-500';
-            }
-
-            return `
-                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-${color}-500 transition duration-300 hover:shadow-lg">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0 ${bgColor} p-3 rounded-full text-white">
-                            <i data-lucide="${icon}" class="w-10 h-10"></i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-500">${title}</p>
-                            <p class="text-3xl font-bold text-gray-900">${value}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        };
-
-        // =================================================================
-        // 2. 產品訂單畫面 (Orders)
-        // =================================================================
-
-        const renderOrdersPage = (searchTerm = '') => {
-            const filteredOrders = orders.filter(order =>
-                order.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                order.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (order.customerName || '').toLowerCase().includes(searchTerm.toLowerCase())
-            );
-
-            const contentHTML = `
-                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
-                    產品訂單管理
-                    <button onclick="showOrderForm()" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 flex items-center">
-                        <i data-lucide="plus" class="w-5 h-5 mr-1"></i> 新增訂單
-                    </button>
-                </h2>
-
-                <div class="mb-4 flex space-x-2">
-                    <input type="text" id="order-search" oninput="renderOrdersPage(this.value)" placeholder="按產品名稱、序號或客戶名稱搜尋..." class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
-                    <button onclick="exportOrdersToCsv()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 flex items-center">
-                        <i data-lucide="file-text" class="w-5 h-5 mr-1"></i> 產生報價單 (CSV)
-                    </button>
-                </div>
-
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">訂單列表 (${filteredOrders.length} 筆)</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">產品名稱</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">序號</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">客戶名稱</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">個數</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">售價 (單價)</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">訂單日期</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                ${filteredOrders.length === 0
-                                    ? '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">無訂單資料。</td></tr>'
-                                    : filteredOrders.map(order => `
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${order.productName}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.serialNumber}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.customerName || '-'}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${order.quantity}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">$${order.unitPrice.toFixed(2)}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(order.startDate)} 至 ${formatDate(order.endDate)}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onclick="showOrderForm('${order.id}')" class="text-primary hover:text-indigo-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                                            <button onclick="deleteData('orders', '${order.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-            document.getElementById('app-content').innerHTML = contentHTML;
-            lucide.createIcons();
-        };
-
-        window.showOrderForm = (id = null) => {
-            currentOrder = orders.find(o => o.id === id) || {};
-            const isEdit = !!id;
-
-            const customerOptions = customers.map(c =>
-                `<option value="${c.name}" ${currentOrder.customerName === c.name ? 'selected' : ''}>${c.name}</option>`
-            ).join('');
-
-            const productOptions = products.map(p =>
-                `<option value="${p.name}" ${currentOrder.productName === p.name ? 'selected' : ''}>${p.name}</option>`
-            ).join('');
-
-            const modalContent = `
-                <h3 class="text-2xl font-bold mb-4">${isEdit ? '編輯訂單' : '新增訂單'}</h3>
-                <form onsubmit="handleOrderSubmit(event, this.dataset.id)" data-id="${id || ''}" class="space-y-4">
-                    <div>
-                        <label for="order-productName" class="block text-sm font-medium text-gray-700">產品名稱</label>
-                        <select id="order-productName" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                            <option value="">請選擇產品規格</option>
-                            ${productOptions}
-                        </select>
-                    </div>
-                    <div>
-                        <label for="order-serialNumber" class="block text-sm font-medium text-gray-700">產品序號 (獨特)</label>
-                        <input type="text" id="order-serialNumber" value="${currentOrder.serialNumber || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="order-unitPrice" class="block text-sm font-medium text-gray-700">售價 (單價)</label>
-                            <input type="number" id="order-unitPrice" value="${currentOrder.unitPrice || ''}" required step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                        <div>
-                            <label for="order-quantity" class="block text-sm font-medium text-gray-700">個數</label>
-                            <input type="number" id="order-quantity" value="${currentOrder.quantity || 1}" required min="1" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="order-startDate" class="block text-sm font-medium text-gray-700">訂單開始日期</label>
-                            <input type="date" id="order-startDate" value="${formatDate(currentOrder.startDate) || formatDate(new Date())}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                        <div>
-                            <label for="order-endDate" class="block text-sm font-medium text-gray-700">訂單結束日期</label>
-                            <input type="date" id="order-endDate" value="${formatDate(currentOrder.endDate) || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                    </div>
-                    <div>
-                        <label for="order-customerName" class="block text-sm font-medium text-gray-700">客戶名稱</label>
-                        <select id="order-customerName" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                            <option value="">請選擇客戶</option>
-                            ${customerOptions}
-                        </select>
-                    </div>
-
-                    <div class="flex justify-end space-x-2 pt-4">
-                        <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">取消</button>
-                        <button type="submit" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150">
-                            ${isEdit ? '保存修改' : '新增訂單'}
-                        </button>
-                    </div>
-                </form>
-            `;
-            openModal(modalContent);
-        };
-
-        window.handleOrderSubmit = (event, id) => {
-            event.preventDefault();
-
-            const data = {
-                productName: document.getElementById('order-productName').value,
-                serialNumber: document.getElementById('order-serialNumber').value,
-                unitPrice: parseFloat(document.getElementById('order-unitPrice').value),
-                quantity: parseInt(document.getElementById('order-quantity').value, 10),
-                startDate: document.getElementById('order-startDate').value,
-                endDate: document.getElementById('order-endDate').value,
-                customerName: document.getElementById('order-customerName').value,
-            };
-
-            // 檢查序號唯一性 (僅新增時)
-            if (!id && orders.some(o => o.serialNumber === data.serialNumber)) {
-                showMessage('error', '此產品序號已被使用，請使用獨特序號。');
-                return;
-            }
-
-            saveData('orders', data, id || null);
-        };
-
-        window.exportOrdersToCsv = () => {
-            if (orders.length === 0) {
-                showMessage('error', '沒有訂單資料可匯出。');
-                return;
-            }
-
-            const headers = ["訂單ID", "產品名稱", "產品序號", "客戶名稱", "單價", "個數", "總價", "訂單開始日期", "訂單結束日期", "建立日期"];
-            let csv = headers.join(',') + '\n';
-
-            orders.forEach(order => {
-                const total = order.unitPrice * order.quantity;
-                const row = [
-                    order.id,
-                    order.productName,
-                    order.serialNumber,
-                    order.customerName,
-                    order.unitPrice.toFixed(2),
-                    order.quantity,
-                    total.toFixed(2),
-                    formatDate(order.startDate),
-                    formatDate(order.endDate),
-                    formatDate(order.createdAt),
-                ].map(item => `"${String(item).replace(/"/g, '""')}"`).join(','); // 處理CSV引號
-
-                csv += row + '\n';
-            });
-
-            const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8;' }); // \ufeff 解決中文亂碼
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `Order_Quote_${formatDate(new Date())}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-            showMessage('success', '報價單 (CSV) 已成功產生並下載！');
-        };
-
-
-        // =================================================================
-        // 3. 產品規格登錄畫面 (Products)
-        // =================================================================
-
-        const renderProductsPage = (searchTerm = '') => {
-            const filteredProducts = products.filter(p =>
-                p.name.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-
-            const contentHTML = `
-                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
-                    產品規格登錄
-                    <button onclick="showProductForm()" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 flex items-center">
-                        <i data-lucide="plus" class="w-5 h-5 mr-1"></i> 新增規格
-                    </button>
-                </h2>
-                <div class="mb-6 flex gap-3">
-                    <div class="flex-1 relative">
-                        <input type="text" id="product-search" value="${searchTerm}" placeholder="輸入產品名稱..." class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
-                        <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-3.5"></i>
-                    </div>
-                    <button onclick="renderProductsPage(document.getElementById('product-search').value)" class="bg-primary hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-150 flex items-center gap-2">
-                        <i data-lucide="search" class="w-5 h-5"></i>
-                        查詢
-                    </button>
-                    <button onclick="document.getElementById('product-search').value=''; renderProductsPage('')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg shadow-md transition duration-150 flex items-center gap-2">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                        清除
-                    </button>
-                </div>
-
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">產品規格列表 (${filteredProducts.length} 筆)</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">名稱</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">成本價</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">售價</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">序號範本</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">個數</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">有效期限</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                ${filteredProducts.length === 0
-                                    ? '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">無產品規格資料。</td></tr>'
-                                    : filteredProducts.map(p => `
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${p.name}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">$${p.costPrice.toFixed(2)}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">$${p.sellingPrice.toFixed(2)}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.serialPrefix || '-'}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.quantity}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(p.expirationDate)}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onclick="showProductForm('${p.id}')" class="text-primary hover:text-indigo-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                                            <button onclick="deleteData('products', '${p.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-            document.getElementById('app-content').innerHTML = contentHTML;
-            lucide.createIcons();
-        };
-
-        window.showProductForm = (id = null) => {
-            currentProduct = products.find(p => p.id === id) || {};
-            const isEdit = !!id;
-
-            const modalContent = `
-                <h3 class="text-2xl font-bold mb-4">${isEdit ? '編輯產品規格' : '新增產品規格'}</h3>
-                <form onsubmit="handleProductSubmit(event, this.dataset.id)" data-id="${id || ''}" class="space-y-4">
-                    <div>
-                        <label for="product-name" class="block text-sm font-medium text-gray-700">產品名稱</label>
-                        <input type="text" id="product-name" value="${currentProduct.name || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                    </div>
-                    <div>
-                        <label for="product-content" class="block text-sm font-medium text-gray-700">產品內容 (描述)</label>
-                        <textarea id="product-content" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">${currentProduct.content || ''}</textarea>
-                    </div>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <label for="product-costPrice" class="block text-sm font-medium text-gray-700">成本價格</label>
-                            <input type="number" id="product-costPrice" value="${currentProduct.costPrice || ''}" required step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                        <div>
-                            <label for="product-sellingPrice" class="block text-sm font-medium text-gray-700">售價</label>
-                            <input type="number" id="product-sellingPrice" value="${currentProduct.sellingPrice || ''}" required step="0.01" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                        <div>
-                            <label for="product-quantity" class="block text-sm font-medium text-gray-700">個數 (庫存)</label>
-                            <input type="number" id="product-quantity" value="${currentProduct.quantity || 0}" required min="0" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="product-serialPrefix" class="block text-sm font-medium text-gray-700">序號範本 (如: PROD-)</label>
-                            <input type="text" id="product-serialPrefix" value="${currentProduct.serialPrefix || ''}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                        <div>
-                            <label for="product-expirationDate" class="block text-sm font-medium text-gray-700">有效期限</label>
-                            <input type="date" id="product-expirationDate" value="${formatDate(currentProduct.expirationDate) || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end space-x-2 pt-4">
-                        <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">取消</button>
-                        <button type="submit" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150">
-                            ${isEdit ? '保存修改' : '新增規格'}
-                        </button>
-                    </div>
-                </form>
-            `;
-            openModal(modalContent);
-        };
-
-        window.handleProductSubmit = (event, id) => {
-            event.preventDefault();
-
-            const data = {
-                name: document.getElementById('product-name').value,
-                content: document.getElementById('product-content').value,
-                costPrice: parseFloat(document.getElementById('product-costPrice').value),
-                sellingPrice: parseFloat(document.getElementById('product-sellingPrice').value),
-                quantity: parseInt(document.getElementById('product-quantity').value, 10),
-                serialPrefix: document.getElementById('product-serialPrefix').value,
-                expirationDate: document.getElementById('product-expirationDate').value,
-            };
-
-            // 檢查產品名稱唯一性 (僅新增時，或編輯時名稱變更)
-            if (products.some(p => p.name === data.name && p.id !== id)) {
-                showMessage('error', '此產品名稱已存在，請使用獨特的名稱。');
-                return;
-            }
-
-            saveData('products', data, id || null);
-        };
-
-
-        // =================================================================
-        // 4. 客戶管理畫面 (Customers)
-        // =================================================================
-
-        const renderCustomersPage = (searchTerm = '') => {
-            const filteredCustomers = customers.filter(c =>
-                c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                c.contactPerson.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-
-            const contentHTML = `
-                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
-                    客戶管理
-                    <button onclick="showCustomerForm()" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 flex items-center">
-                        <i data-lucide="plus" class="w-5 h-5 mr-1"></i> 新增客戶
-                    </button>
-                </h2>
-                <input type="text" id="customer-search" oninput="renderCustomersPage(this.value)" placeholder="按客戶名稱或聯絡人搜尋..." class="mb-4 w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
-
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">客戶列表 (${filteredCustomers.length} 筆)</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">客戶名稱</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">聯絡人</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">電話</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">電子郵件</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                ${filteredCustomers.length === 0
-                                    ? '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">無客戶資料。</td></tr>'
-                                    : filteredCustomers.map(c => `
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${c.name}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.contactPerson}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.phone}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.email}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onclick="showCustomerForm('${c.id}')" class="text-primary hover:text-indigo-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                                            <button onclick="deleteData('customers', '${c.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-            document.getElementById('app-content').innerHTML = contentHTML;
-            lucide.createIcons();
-        };
-
-        window.showCustomerForm = (id = null) => {
-            currentCustomer = customers.find(c => c.id === id) || {};
-            const isEdit = !!id;
-
-            const modalContent = `
-                <h3 class="text-2xl font-bold mb-4">${isEdit ? '編輯客戶資料' : '新增客戶'}</h3>
-                <form onsubmit="handleCustomerSubmit(event, this.dataset.id)" data-id="${id || ''}" class="space-y-4">
-                    <div>
-                        <label for="customer-name" class="block text-sm font-medium text-gray-700">客戶名稱 (公司/個人)</label>
-                        <input type="text" id="customer-name" value="${currentCustomer.name || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                    </div>
-                    <div>
-                        <label for="customer-contactPerson" class="block text-sm font-medium text-gray-700">聯絡人</label>
-                        <input type="text" id="customer-contactPerson" value="${currentCustomer.contactPerson || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="customer-phone" class="block text-sm font-medium text-gray-700">電話</label>
-                            <input type="text" id="customer-phone" value="${currentCustomer.phone || ''}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                        <div>
-                            <label for="customer-email" class="block text-sm font-medium text-gray-700">電子郵件</label>
-                            <input type="email" id="customer-email" value="${currentCustomer.email || ''}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end space-x-2 pt-4">
-                        <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">取消</button>
-                        <button type="submit" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150">
-                            ${isEdit ? '保存修改' : '新增客戶'}
-                        </button>
-                    </div>
-                </form>
-            `;
-            openModal(modalContent);
-        };
-
-        window.handleCustomerSubmit = (event, id) => {
-            event.preventDefault();
-
-            const data = {
-                name: document.getElementById('customer-name').value,
-                contactPerson: document.getElementById('customer-contactPerson').value,
-                phone: document.getElementById('customer-phone').value,
-                email: document.getElementById('customer-email').value,
-            };
-
-            // 檢查客戶名稱唯一性
-            if (customers.some(c => c.name === data.name && c.id !== id)) {
-                showMessage('error', '此客戶名稱已存在，請使用獨特的名稱。');
-                return;
-            }
-
-            saveData('customers', data, id || null);
-        };
-
-
-        // =================================================================
-        // 5. 內部聯絡人建立畫面 (Contacts)
-        // =================================================================
-
-        const renderContactsPage = (searchTerm = '') => {
-            const filteredContacts = contacts.filter(c =>
-                c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                c.department.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-
-            const contentHTML = `
-                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
-                    內部聯絡人建立
-                    <button onclick="showContactForm()" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 flex items-center">
-                        <i data-lucide="plus" class="w-5 h-5 mr-1"></i> 新增聯絡人
-                    </button>
-                </h2>
-                <input type="text" id="contact-search" oninput="renderContactsPage(this.value)" placeholder="按姓名或部門搜尋..." class="mb-4 w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
-
-                <div class="bg-white p-6 rounded-xl shadow-lg">
-                    <h3 class="text-xl font-semibold mb-4">聯絡人列表 (${filteredContacts.length} 筆)</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">姓名</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">部門</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">電話/分機</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">電子郵件</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                ${filteredContacts.length === 0
-                                    ? '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">無內部聯絡人資料。</td></tr>'
-                                    : filteredContacts.map(c => `
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${c.name}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.department}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.phone}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.email}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onclick="showContactForm('${c.id}')" class="text-primary hover:text-indigo-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                                            <button onclick="deleteData('contacts', '${c.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-            document.getElementById('app-content').innerHTML = contentHTML;
-            lucide.createIcons();
-        };
-
-        window.showContactForm = (id = null) => {
-            currentContact = contacts.find(c => c.id === id) || {};
-            const isEdit = !!id;
-
-            const modalContent = `
-                <h3 class="text-2xl font-bold mb-4">${isEdit ? '編輯內部聯絡人' : '新增內部聯絡人'}</h3>
-                <form onsubmit="handleContactSubmit(event, this.dataset.id)" data-id="${id || ''}" class="space-y-4">
-                    <div>
-                        <label for="contact-name" class="block text-sm font-medium text-gray-700">姓名</label>
-                        <input type="text" id="contact-name" value="${currentContact.name || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                    </div>
-                    <div>
-                        <label for="contact-department" class="block text-sm font-medium text-gray-700">部門</label>
-                        <input type="text" id="contact-department" value="${currentContact.department || ''}" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="contact-phone" class="block text-sm font-medium text-gray-700">電話/分機</label>
-                            <input type="text" id="contact-phone" value="${currentContact.phone || ''}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                        <div>
-                            <label for="contact-email" class="block text-sm font-medium text-gray-700">電子郵件</label>
-                            <input type="email" id="contact-email" value="${currentContact.email || ''}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary">
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end space-x-2 pt-4">
-                        <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">取消</button>
-                        <button type="submit" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150">
-                            ${isEdit ? '保存修改' : '新增聯絡人'}
-                        </button>
-                    </div>
-                </form>
-            `;
-            openModal(modalContent);
-        };
-
-        window.handleContactSubmit = (event, id) => {
-            event.preventDefault();
-
-            const data = {
-                name: document.getElementById('contact-name').value,
-                department: document.getElementById('contact-department').value,
-                phone: document.getElementById('contact-phone').value,
-                email: document.getElementById('contact-email').value,
-            };
-
-            saveData('contacts', data, id || null);
-        };
-
-
-        // --- 應用程式啟動 ---
-        window.onload = function () {
-            // 由於 Firebase 初始化是異步的，我們等待它準備好
-            initAuth();
-        };
-
     </script>
 </body>
 </html>
