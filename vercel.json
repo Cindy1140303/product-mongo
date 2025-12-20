@@ -13,7 +13,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "/api/:path*"
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/",
+      "destination": "/app.html"
     },
     {
       "source": "/(.*)",
