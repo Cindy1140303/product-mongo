@@ -22,9 +22,106 @@
             scrollbar-width: none;  /* Firefox */
         }
         /* 定義主要配色 */
-        .bg-primary { background-color: #4f46e5; }
-        .text-primary { color: #4f46e5; }
-        .border-primary { border-color: #4f46e5; }
+        .bg-primary { background-color: #10b981; }
+        .text-primary { color: #10b981; }
+        .border-primary { border-color: #10b981; }
+        
+        /* 新增按鈕樣式 */
+        .btn-primary {
+            background-color: #10b981;
+            color: white;
+            font-weight: 600;
+            padding: 0.625rem 1rem;
+            border-radius: 0.625rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .btn-primary:hover {
+            background-color: #059669;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+            font-weight: 600;
+            padding: 0.625rem 1rem;
+            border-radius: 0.625rem;
+            box-shadow: 0 4px 12px rgba(107, 114, 128, 0.2);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #4b5563;
+            box-shadow: 0 8px 20px rgba(107, 114, 128, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(107, 114, 128, 0.2);
+        }
+        
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+            font-weight: 600;
+            padding: 0.625rem 1rem;
+            border-radius: 0.625rem;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .btn-danger:hover {
+            background-color: #dc2626;
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+        }
+        
+        .btn-success {
+            background-color: #10b981;
+            color: white;
+            font-weight: 600;
+            padding: 0.625rem 1rem;
+            border-radius: 0.625rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .btn-success:hover {
+            background-color: #059669;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .btn-success:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
         
         /* 按鈕文字大小 */
         button {
@@ -60,6 +157,21 @@
         }
         #sidebar.collapsed .nav-btn i {
             margin-right: 0;
+        }
+        
+        /* 側邊欄導航按鈕樣式 */
+        .nav-btn:hover {
+            background-color: #d1fae5;
+        }
+        
+        .nav-btn.active-dashboard,
+        .nav-btn.active-orders,
+        .nav-btn.active-products,
+        .nav-btn.active-customers,
+        .nav-btn.active-contacts {
+            background-color: #d1fae5;
+            color: #10b981;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -515,15 +627,15 @@
         const renderStatCard = (icon, title, value, color) => {
             let bgColor;
             switch(color) {
-                case 'green': bgColor = 'bg-green-500'; break;
+                case 'green': bgColor = 'bg-emerald-500'; break;
                 case 'blue': bgColor = 'bg-blue-500'; break;
-                case 'indigo': bgColor = 'bg-indigo-500'; break;
-                case 'yellow': bgColor = 'bg-yellow-500'; break;
+                case 'indigo': bgColor = 'bg-violet-500'; break;
+                case 'yellow': bgColor = 'bg-amber-500'; break;
                 default: bgColor = 'bg-gray-500';
             }
 
             return `
-                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 border-${color}-500 transition duration-300 hover:shadow-xl">
+                <div class="bg-white p-6 rounded-xl shadow-lg border-l-4 transition duration-300 hover:shadow-xl hover:border-l-8 ${color === 'green' ? 'border-emerald-500' : color === 'blue' ? 'border-blue-500' : color === 'indigo' ? 'border-violet-500' : 'border-amber-500'}">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 ${bgColor} p-3 rounded-full text-white">
                             <i data-lucide="${icon}" class="w-6 h-6"></i>
@@ -551,14 +663,14 @@
             const contentHTML = `
                 <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
                     產品訂單管理
-                    <button onclick="showOrderForm()" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 flex items-center">
+                    <button onclick="showOrderForm()" class="btn-primary flex items-center">
                         <i data-lucide="plus" class="w-5 h-5 mr-1"></i> 新增訂單
                     </button>
                 </h2>
 
                 <div class="mb-4 flex space-x-2">
                     <input type="text" id="order-search" oninput="renderOrdersPage(this.value)" placeholder="按產品名稱、序號或客戶名稱搜尋..." class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
-                    <button onclick="exportOrdersToCsv()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 flex items-center">
+                    <button onclick="exportOrdersToCsv()" class="btn-success flex items-center">
                         <i data-lucide="file-text" class="w-5 h-5 mr-1"></i> 產生報價單 (CSV)
                     </button>
                 </div>
@@ -590,7 +702,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">$${order.unitPrice.toFixed(2)}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(order.startDate)} 至 ${formatDate(order.endDate)}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onclick="showOrderForm('${order.id}')" class="text-primary hover:text-indigo-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                            <button onclick="showOrderForm('${order.id}')" class="text-primary hover:text-emerald-700 transition duration-150 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                                             <button onclick="deleteData('orders', '${order.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                         </td>
                                     </tr>
@@ -659,8 +771,8 @@
                     </div>
 
                     <div class="flex justify-end space-x-2 pt-4">
-                        <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">取消</button>
-                        <button type="submit" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150">
+                        <button type="button" onclick="closeModal()" class="btn-secondary">取消</button>
+                        <button type="submit" class="btn-primary">
                             ${isEdit ? '保存修改' : '新增訂單'}
                         </button>
                     </div>
@@ -736,7 +848,7 @@
             const contentHTML = `
                 <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
                     產品規格登錄
-                    <button onclick="showProductForm()" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 flex items-center">
+                    <button onclick="showProductForm()" class="btn-primary flex items-center">
                         <i data-lucide="plus" class="w-5 h-5 mr-1"></i> 新增規格
                     </button>
                 </h2>
@@ -769,7 +881,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${p.quantity}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(p.expirationDate)}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onclick="showProductForm('${p.id}')" class="text-primary hover:text-indigo-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                            <button onclick="showProductForm('${p.id}')" class="text-primary hover:text-emerald-700 transition duration-150 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                                             <button onclick="deleteData('products', '${p.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                         </td>
                                     </tr>
@@ -824,8 +936,8 @@
                     </div>
 
                     <div class="flex justify-end space-x-2 pt-4">
-                        <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">取消</button>
-                        <button type="submit" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150">
+                        <button type="button" onclick="closeModal()" class="btn-secondary">取消</button>
+                        <button type="submit" class="btn-primary">
                             ${isEdit ? '保存修改' : '新增規格'}
                         </button>
                     </div>
@@ -870,7 +982,7 @@
             const contentHTML = `
                 <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
                     客戶管理
-                    <button onclick="showCustomerForm()" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 flex items-center">
+                    <button onclick="showCustomerForm()" class="btn-primary flex items-center">
                         <i data-lucide="plus" class="w-5 h-5 mr-1"></i> 新增客戶
                     </button>
                 </h2>
@@ -879,11 +991,11 @@
                         <input type="text" id="customer-search" value="${searchTerm}" placeholder="輸入客戶名稱或聯絡人..." class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
                         <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-3.5"></i>
                     </div>
-                    <button onclick="renderCustomersPage(document.getElementById('customer-search').value)" class="bg-primary hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-150 flex items-center gap-2">
+                    <button onclick="renderCustomersPage(document.getElementById('customer-search').value)" class="btn-primary flex items-center gap-2">
                         <i data-lucide="search" class="w-5 h-5"></i>
                         查詢
                     </button>
-                    <button onclick="document.getElementById('customer-search').value=''; renderCustomersPage('')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg shadow-md transition duration-150 flex items-center gap-2">
+                    <button onclick="document.getElementById('customer-search').value=''; renderCustomersPage('')" class="btn-secondary flex items-center gap-2">
                         <i data-lucide="x" class="w-5 h-5"></i>
                         清除
                     </button>
@@ -912,7 +1024,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.phone}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.email}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onclick="showCustomerForm('${c.id}')" class="text-primary hover:text-indigo-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                            <button onclick="showCustomerForm('${c.id}')" class="text-primary hover:text-emerald-700 transition duration-150 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                                             <button onclick="deleteData('customers', '${c.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                         </td>
                                     </tr>
@@ -953,8 +1065,8 @@
                     </div>
 
                     <div class="flex justify-end space-x-2 pt-4">
-                        <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">取消</button>
-                        <button type="submit" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150">
+                        <button type="button" onclick="closeModal()" class="btn-secondary">取消</button>
+                        <button type="submit" class="btn-primary">
                             ${isEdit ? '保存修改' : '新增客戶'}
                         </button>
                     </div>
@@ -996,7 +1108,7 @@
             const contentHTML = `
                 <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
                     內部聯絡人建立
-                    <button onclick="showContactForm()" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-150 flex items-center">
+                    <button onclick="showContactForm()" class="btn-primary flex items-center">
                         <i data-lucide="plus" class="w-5 h-5 mr-1"></i> 新增聯絡人
                     </button>
                 </h2>
@@ -1005,11 +1117,11 @@
                         <input type="text" id="contact-search" value="${searchTerm}" placeholder="輸入姓名或部門..." class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
                         <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-3 top-3.5"></i>
                     </div>
-                    <button onclick="renderContactsPage(document.getElementById('contact-search').value)" class="bg-primary hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-150 flex items-center gap-2">
+                    <button onclick="renderContactsPage(document.getElementById('contact-search').value)" class="btn-primary flex items-center gap-2">
                         <i data-lucide="search" class="w-5 h-5"></i>
                         查詢
                     </button>
-                    <button onclick="document.getElementById('contact-search').value=''; renderContactsPage('')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg shadow-md transition duration-150 flex items-center gap-2">
+                    <button onclick="document.getElementById('contact-search').value=''; renderContactsPage('')" class="btn-secondary flex items-center gap-2">
                         <i data-lucide="x" class="w-5 h-5"></i>
                         清除
                     </button>
@@ -1038,7 +1150,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.phone}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${c.email}</td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button onclick="showContactForm('${c.id}')" class="text-primary hover:text-indigo-900 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                            <button onclick="showContactForm('${c.id}')" class="text-primary hover:text-emerald-700 transition duration-150 mx-1"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                                             <button onclick="deleteData('contacts', '${c.id}')" class="text-red-600 hover:text-red-900 mx-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                         </td>
                                     </tr>
@@ -1079,8 +1191,8 @@
                     </div>
 
                     <div class="flex justify-end space-x-2 pt-4">
-                        <button type="button" onclick="closeModal()" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-150">取消</button>
-                        <button type="submit" class="bg-primary hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-150">
+                        <button type="button" onclick="closeModal()" class="btn-secondary">取消</button>
+                        <button type="submit" class="btn-primary">
                             ${isEdit ? '保存修改' : '新增聯絡人'}
                         </button>
                     </div>
