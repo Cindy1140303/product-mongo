@@ -118,11 +118,16 @@ app.use('/api/*', async (req, res, next) => {
 });
 
 // API 路由註冊（必須在靜態文件服務之前）
-app.use('/api/products', require('./routes/products'));
-app.use('/api/orders', require('./routes/orders'));
-app.use('/api/customers', require('./routes/customers'));
-app.use('/api/contacts', require('./routes/contacts'));
-app.use('/api/dashboard', require('./routes/dashboard'));
+try {
+  app.use('/api/products', require('./routes/products'));
+  app.use('/api/orders', require('./routes/orders'));
+  app.use('/api/customers', require('./routes/customers'));
+  app.use('/api/contacts', require('./routes/contacts'));
+  app.use('/api/dashboard', require('./routes/dashboard'));
+  console.log('✅ 所有 API 路由已成功註冊');
+} catch (error) {
+  console.error('❌ API 路由註冊失敗:', error.message);
+}
 
 // =====================================================
 // 靜態文件服務和前端路由

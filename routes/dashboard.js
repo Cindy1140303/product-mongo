@@ -4,10 +4,8 @@ const { getUserCollection } = require('../config/mongodb');
 
 // 中介軟體:提取使用者 ID
 const getUserId = (req, res, next) => {
-  const userId = req.headers['x-user-id'];
-  if (!userId) {
-    return res.status(400).json({ success: false, message: '缺少使用者 ID' });
-  }
+  const userId = req.headers['x-user-id'] || 'default-user';
+  req.userId = userId;
   req.userId = userId;
   next();
 };
