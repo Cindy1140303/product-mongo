@@ -14,6 +14,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 提供靜態文件服務（HTML、CSS、JS 等）
+app.use(express.static(''));
+app.use('/pages', express.static('pages'));
+
 // 請求日誌中介軟體
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);

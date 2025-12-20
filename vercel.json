@@ -4,6 +4,7 @@
   "installCommand": "npm install",
   "framework": null,
   "outputDirectory": null,
+  "public": true,
   "functions": {
     "api/index.js": {
       "maxDuration": 10
@@ -13,6 +14,17 @@
     {
       "source": "/api/:path*",
       "destination": "/api/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, must-revalidate"
+        }
+      ]
     }
   ]
 }
