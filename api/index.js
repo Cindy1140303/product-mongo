@@ -17,7 +17,8 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // 添加 /api 前綴以匹配 Express 路由
+  // Vercel 會保留完整的請求路徑，包括 /api
+  // 但為了確保，我們檢查並在需要時添加 /api 前綴
   if (!req.url.startsWith('/api')) {
     req.url = '/api' + req.url;
   }
