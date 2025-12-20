@@ -4,12 +4,9 @@ const { getUserCollection } = require('../config/mongodb');
 const { ObjectId } = require('mongodb');
 const { format } = require('date-fns');
 
-// 中介軟體:提取使用者 ID
+// 中介軟體:提取使用者 ID（如果沒有則使用預設值）
 const getUserId = (req, res, next) => {
-  const userId = req.headers['x-user-id'];
-  if (!userId) {
-    return res.status(400).json({ success: false, message: '缺少使用者 ID' });
-  }
+  const userId = req.headers['x-user-id'] || 'default-user';
   req.userId = userId;
   next();
 };
