@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 
 // 載入環境變數
 dotenv.config();
@@ -14,20 +15,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 提供靜態文件服務（HTML、CSS、JS 等）
-app.use(express.static(__dirname));
-app.use('/pages', express.static(__dirname + '/pages'));
-
-// 設置 app.html 作為默認前端
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/app.html');
-});
-
 // 請求日誌中介軟體
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
+
+// =====================================================
+// API 路由 - 優先於靜態文件服務
+// =====================================================
 
 // 健康檢查路由
 app.get('/health', async (req, res) => {
@@ -86,23 +82,6 @@ app.get('/api/test-connection', async (req, res) => {
   }
 });
 
-// 註釋掉根路徑 API - 讓靜態文件服務處理
-// app.get('/', (req, res) => {
-//   res.json({ 
-//     success: true,
-//     message: '產品訂單管理系統 API',
-//     version: '1.0.0',
-//     endpoints: {
-//       health: '/health',
-//       products: '/api/products',
-//       orders: '/api/orders',
-//       customers: '/api/customers',
-//       contacts: '/api/contacts',
-//       dashboard: '/api/dashboard'
-//     }
-//   });
-// });
-
 // 延遲 MongoDB 初始化，只在實際使用時才初始化
 let mongoDBInitialized = false;
 const initMongoDBOnce = async () => {
@@ -124,7 +103,7 @@ const initMongoDBOnce = async () => {
   }
 };
 
-// API 路由（延遲初始化 MongoDB）
+// API 中介軟體 - 初始化 MongoDB
 app.use('/api/*', async (req, res, next) => {
   try {
     await initMongoDBOnce();
@@ -138,26 +117,43 @@ app.use('/api/*', async (req, res, next) => {
   }
 });
 
+// API 路由註冊（必須在靜態文件服務之前）
 app.use('/api/products', require('./routes/products'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/contacts', require('./routes/contacts'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 
-// 404 錯誤處理 - 提供靜態 HTML 文件作為備選（SPA 支持）
-app.use((req, res, next) => {
-  // 如果是 API 請求，返回 404 JSON
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ 
-      success: false,
-      message: '找不到請求的資源' 
-    });
+// =====================================================
+// 靜態文件服務和前端路由
+// =====================================================
+
+// 提供靜態文件服務（HTML、CSS、JS 等）
+app.use(express.static(path.join(__dirname)));
+app.use('/pages', express.static(path.join(__dirname, 'pages')));
+
+// 設置 app.html 作為默認前端
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'app.html'));
+});
+
+// SPA 支持 - 所有非 API 的路由都返回 app.html
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api/')) {
+    res.sendFile(path.join(__dirname, 'app.html'));
   }
-  
-  // 靜態文件服務在這裡
+});
+
+// =====================================================
+// 錯誤處理
+// =====================================================
+
+// 404 錯誤處理 - 針對 API 請求
+app.use('/api/*', (req, res) => {
   res.status(404).json({ 
     success: false,
-    message: '找不到請求的資源' 
+    message: '找不到請求的 API 端點',
+    path: req.path
   });
 });
 
@@ -171,12 +167,18 @@ app.use((err, req, res, next) => {
   });
 });
 
+// =====================================================
+// 啟動伺服器
+// =====================================================
+
 // 只在非 Vercel 環境下啟動伺服器
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`🚀 伺服器運行於 http://localhost:${PORT}`);
     console.log(`📚 健康檢查: http://localhost:${PORT}/health`);
     console.log(`🌍 環境: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📌 前端: http://localhost:${PORT}/`);
+    console.log(`🔗 API 基礎路徑: http://localhost:${PORT}/api`);
   });
 }
 
