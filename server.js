@@ -15,8 +15,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 提供靜態文件服務（HTML、CSS、JS 等）
-app.use(express.static(''));
-app.use('/pages', express.static('pages'));
+app.use(express.static(__dirname));
+app.use('/pages', express.static(__dirname + '/pages'));
 
 // 請求日誌中介軟體
 app.use((req, res, next) => {
@@ -81,21 +81,22 @@ app.get('/api/test-connection', async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
-  res.json({ 
-    success: true,
-    message: '產品訂單管理系統 API',
-    version: '1.0.0',
-    endpoints: {
-      health: '/health',
-      products: '/api/products',
-      orders: '/api/orders',
-      customers: '/api/customers',
-      contacts: '/api/contacts',
-      dashboard: '/api/dashboard'
-    }
-  });
-});
+// 註釋掉根路徑 API - 讓靜態文件服務處理
+// app.get('/', (req, res) => {
+//   res.json({ 
+//     success: true,
+//     message: '產品訂單管理系統 API',
+//     version: '1.0.0',
+//     endpoints: {
+//       health: '/health',
+//       products: '/api/products',
+//       orders: '/api/orders',
+//       customers: '/api/customers',
+//       contacts: '/api/contacts',
+//       dashboard: '/api/dashboard'
+//     }
+//   });
+// });
 
 // 延遲 MongoDB 初始化，只在實際使用時才初始化
 let mongoDBInitialized = false;
@@ -138,8 +139,17 @@ app.use('/api/customers', require('./routes/customers'));
 app.use('/api/contacts', require('./routes/contacts'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 
-// 404 錯誤處理
-app.use((req, res) => {
+// 404 錯誤處理 - 提供靜態 HTML 文件作為備選（SPA 支持）
+app.use((req, res, next) => {
+  // 如果是 API 請求，返回 404 JSON
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ 
+      success: false,
+      message: '找不到請求的資源' 
+    });
+  }
+  
+  // 靜態文件服務在這裡
   res.status(404).json({ 
     success: false,
     message: '找不到請求的資源' 
