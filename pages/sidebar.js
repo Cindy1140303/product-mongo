@@ -1,26 +1,30 @@
 // 動態生成側邊欄導航
 function generateSidebar(currentPage) {
     const sidebarHTML = `
-    <div class="w-64 bg-white shadow-xl h-screen sticky top-0">
-        <div class="p-6 border-b">
-            <h1 class="text-2xl font-bold text-gray-800">管理儀表板</h1>
-            <p class="text-sm text-gray-500 mt-1">導航</p>
+    <div class="w-64 bg-gray-50 h-screen sticky top-0 overflow-y-auto p-4">
+        <div class="mb-6">
+            <h1 class="text-xl font-bold text-gray-800">管理系統</h1>
         </div>
-        <nav class="flex flex-col p-4 space-y-2">
-            <a href="dashboard.html" class="nav-btn flex items-center p-3 rounded-lg ${currentPage === 'dashboard' ? 'active' : ''}">
-                <i data-lucide="layout-grid" class="w-5 h-5 mr-3"></i>儀表板
+        <nav class="flex flex-col gap-3">
+            <a href="dashboard.html" class="nav-btn ${currentPage === 'dashboard' ? 'active' : ''} flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200">
+                <i data-lucide="layout-grid" class="w-5 h-5"></i>
+                <span>儀表板</span>
             </a>
-            <a href="orders.html" class="nav-btn flex items-center p-3 rounded-lg ${currentPage === 'orders' ? 'active' : ''}">
-                <i data-lucide="clipboard-list" class="w-5 h-5 mr-3"></i>產品訂單管理
+            <a href="orders.html" class="nav-btn ${currentPage === 'orders' ? 'active' : ''} flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200">
+                <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                <span>產品訂單管理</span>
             </a>
-            <a href="products.html" class="nav-btn flex items-center p-3 rounded-lg ${currentPage === 'products' ? 'active' : ''}">
-                <i data-lucide="package" class="w-5 h-5 mr-3"></i>產品規格登錄
+            <a href="products.html" class="nav-btn ${currentPage === 'products' ? 'active' : ''} flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200">
+                <i data-lucide="package" class="w-5 h-5"></i>
+                <span>產品規格登錄</span>
             </a>
-            <a href="customers.html" class="nav-btn flex items-center p-3 rounded-lg ${currentPage === 'customers' ? 'active' : ''}">
-                <i data-lucide="users" class="w-5 h-5 mr-3"></i>客戶管理
+            <a href="customers.html" class="nav-btn ${currentPage === 'customers' ? 'active' : ''} flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200">
+                <i data-lucide="users" class="w-5 h-5"></i>
+                <span>客戶管理</span>
             </a>
-            <a href="contacts.html" class="nav-btn flex items-center p-3 rounded-lg ${currentPage === 'contacts' ? 'active' : ''}">
-                <i data-lucide="contact" class="w-5 h-5 mr-3"></i>內部聯絡人建立
+            <a href="contacts.html" class="nav-btn ${currentPage === 'contacts' ? 'active' : ''} flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200">
+                <i data-lucide="contact" class="w-5 h-5"></i>
+                <span>內部聯絡人建立</span>
             </a>
         </nav>
     </div>
