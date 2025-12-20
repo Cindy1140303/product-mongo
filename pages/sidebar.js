@@ -3,7 +3,7 @@ function generateSidebar(currentPage) {
     const sidebarHTML = `
     <div class="w-64 bg-gray-50 h-screen sticky top-0 overflow-y-auto p-4">
         <div class="mb-6">
-            <h1 class="text-xl font-bold text-gray-800">管理系統</h1>
+            <h1 class="text-xl font-bold text-gray-800">產品管理平台</h1>
         </div>
         <nav class="flex flex-col gap-3">
             <a href="dashboard.html" class="nav-btn ${currentPage === 'dashboard' ? 'active' : ''} flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200">
