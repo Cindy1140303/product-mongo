@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>產品及訂單管理系統</title>
+    <title>產品管理平台</title>
     <!-- 載入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 載入 Lucide Icons -->
@@ -32,21 +32,21 @@
     <!-- 側邊欄導航 -->
     <div id="sidebar" class="w-64 bg-white shadow-xl h-screen sticky top-0 flex flex-col transition-all duration-300">
         <div class="p-6 border-b">
-            <h1 class="text-2xl font-bold text-gray-800">管理儀表板</h1>
-            <p class="text-sm text-gray-500 mt-1" id="user-info">載入中...</p>
+            <h1 class="text-2xl font-bold text-gray-800">產品管理平台</h1>
+            <p class="text-sm text-gray-500 mt-1" id="user-info">user-info</p>
         </div>
         <nav class="flex flex-col p-4 space-y-2">
             <button onclick="changePage('dashboard')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-dashboard">
                 <i data-lucide="layout-grid" class="w-5 h-5 mr-3"></i>
-                儀表板 (到期產品)
+                儀表板
             </button>
             <button onclick="changePage('orders')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-orders">
                 <i data-lucide="clipboard-list" class="w-5 h-5 mr-3"></i>
-                產品訂單管理
+                訂單管理
             </button>
             <button onclick="changePage('products')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-products">
                 <i data-lucide="package" class="w-5 h-5 mr-3"></i>
-                產品規格登錄
+                規格登錄
             </button>
             <button onclick="changePage('customers')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-customers">
                 <i data-lucide="users" class="w-5 h-5 mr-3"></i>
@@ -54,7 +54,7 @@
             </button>
             <button onclick="changePage('contacts')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-contacts">
                 <i data-lucide="contact" class="w-5 h-5 mr-3"></i>
-                內部聯絡人建立
+                人員建立
             </button>
         </nav>
     </div>
