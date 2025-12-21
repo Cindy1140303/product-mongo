@@ -108,6 +108,7 @@
         function toggleMobileSidebar() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('hidden');
+            setTimeout(() => lucide.createIcons(), 0);
         }
 
         // 點擊邊界外時關閉側邊欄
@@ -220,7 +221,10 @@
                     renderContactsPage();
                     break;
             }
-            lucide.createIcons();
+            // 等待 DOM 更新後初始化圖標
+            setTimeout(() => {
+                lucide.createIcons();
+            }, 0);
         };
 
         function formatDate(isoString) {
@@ -407,10 +411,15 @@
             );
 
             const html = `
-                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
-                    產品訂單管理
-                    <button onclick="showOrderForm()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"><i data-lucide="plus" class="w-5 h-5 mr-1 inline"></i>新增訂單</button>
-                </h2>
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleMobileSidebar()" class="md:hidden p-2 hover:bg-gray-100 rounded-lg">
+                            <i data-lucide="menu" class="w-6 h-6 text-gray-700"></i>
+                        </button>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">產品訂單管理</h2>
+                    </div>
+                    <button onclick="showOrderForm()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm sm:text-base"><i data-lucide="plus" class="w-5 h-5 mr-1 inline"></i><span class="hidden sm:inline">新增訂單</span><span class="sm:hidden">新增</span></button>
+                </div>
                 <div class="mb-4 flex space-x-2">
                     <input type="text" id="order-search" oninput="renderOrdersPage(this.value)" placeholder="按產品名稱、序號或客戶名稱搜尋..." class="flex-1 p-3 border border-gray-300 rounded-lg">
                     <button onclick="exportOrdersToCsv()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"><i data-lucide="file-text" class="w-5 h-5 mr-1 inline"></i>產生報價單</button>
@@ -532,10 +541,15 @@
             const filtered = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
             
             const html = `
-                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
-                    產品規格登錄
-                    <button onclick="showProductForm()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"><i data-lucide="plus" class="w-5 h-5 mr-1 inline"></i>新增規格</button>
-                </h2>
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleMobileSidebar()" class="md:hidden p-2 hover:bg-gray-100 rounded-lg">
+                            <i data-lucide="menu" class="w-6 h-6 text-gray-700"></i>
+                        </button>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">產品規格登錄</h2>
+                    </div>
+                    <button onclick="showProductForm()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm sm:text-base"><i data-lucide="plus" class="w-5 h-5 mr-1 inline"></i><span class="hidden sm:inline">新增規格</span><span class="sm:hidden">新增</span></button>
+                </div>
                 <div class="mb-6 flex gap-3">
                     <input type="text" id="product-search" placeholder="輸入產品名稱..." class="flex-1 p-3 border border-gray-300 rounded-lg">
                     <button onclick="renderProductsPage(document.getElementById('product-search').value)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">查詢</button>
@@ -628,11 +642,20 @@
             const filtered = customers.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
             
             const html = `
-                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
-                    客戶管理
-                    <button onclick="showCustomerForm()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"><i data-lucide="plus" class="w-5 h-5 mr-1 inline"></i>新增客戶</button>
-                </h2>
-                <input type="text" id="customer-search" oninput="renderCustomersPage(this.value)" placeholder="按客戶名稱搜尋..." class="mb-4 w-full p-3 border border-gray-300 rounded-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleMobileSidebar()" class="md:hidden p-2 hover:bg-gray-100 rounded-lg">
+                            <i data-lucide="menu" class="w-6 h-6 text-gray-700"></i>
+                        </button>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">客戶管理</h2>
+                    </div>
+                    <button onclick="showCustomerForm()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm sm:text-base"><i data-lucide="plus" class="w-5 h-5 mr-1 inline"></i><span class="hidden sm:inline">新增客戶</span><span class="sm:hidden">新增</span></button>
+                </div>
+                <input type="text" id="customer-search" placeholder="按客戶名稱搜尋..." class="mb-4 w-full p-3 border border-gray-300 rounded-lg">
+                <div class="mb-4 flex gap-2">
+                    <button onclick="renderCustomersPage(document.getElementById('customer-search').value)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm">查詢</button>
+                    <button onclick="document.getElementById('customer-search').value=''; renderCustomersPage('')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg text-sm">清除</button>
+                </div>
                 <div class="bg-white p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">客戶列表 (${filtered.length} 筆)</h3>
                     <div class="overflow-x-auto">
@@ -715,11 +738,20 @@
             const filtered = contacts.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
             
             const html = `
-                <h2 class="text-3xl font-bold text-gray-800 mb-6 flex justify-between items-center">
-                    內部聯絡人建立
-                    <button onclick="showContactForm()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"><i data-lucide="plus" class="w-5 h-5 mr-1 inline"></i>新增聯絡人</button>
-                </h2>
-                <input type="text" id="contact-search" oninput="renderContactsPage(this.value)" placeholder="按姓名或部門搜尋..." class="mb-4 w-full p-3 border border-gray-300 rounded-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleMobileSidebar()" class="md:hidden p-2 hover:bg-gray-100 rounded-lg">
+                            <i data-lucide="menu" class="w-6 h-6 text-gray-700"></i>
+                        </button>
+                        <h2 class="text-2xl sm:text-3xl font-bold text-gray-800">內部聯絡人建立</h2>
+                    </div>
+                    <button onclick="showContactForm()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm sm:text-base"><i data-lucide="plus" class="w-5 h-5 mr-1 inline"></i><span class="hidden sm:inline">新增聯絡人</span><span class="sm:hidden">新增</span></button>
+                </div>
+                <input type="text" id="contact-search" placeholder="按姓名或部門搜尋..." class="mb-4 w-full p-3 border border-gray-300 rounded-lg">
+                <div class="mb-4 flex gap-2">
+                    <button onclick="renderContactsPage(document.getElementById('contact-search').value)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm">查詢</button>
+                    <button onclick="document.getElementById('contact-search').value=''; renderContactsPage('')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg text-sm">清除</button>
+                </div>
                 <div class="bg-white p-6 rounded-xl shadow-lg">
                     <h3 class="text-xl font-semibold mb-4">聯絡人列表 (${filtered.length} 筆)</h3>
                     <div class="overflow-x-auto">
@@ -799,7 +831,9 @@
         };
 
         window.addEventListener('DOMContentLoaded', async () => {
-            lucide.createIcons(); // 初始化頁面上的所有圖標
+            // 初始化所有圖標
+            await new Promise(resolve => setTimeout(resolve, 100)); // 等待 Lucide 加載
+            lucide.createIcons();
             await loadAllData();
         });
     </script>
