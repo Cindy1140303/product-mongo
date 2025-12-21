@@ -798,7 +798,10 @@
             loadAllData();
         };
 
-        window.addEventListener('DOMContentLoaded', loadAllData);
+        window.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons(); // 初始化頁面上的所有圖標
+            await loadAllData();
+        });
     </script>
 </body>
 </html>
