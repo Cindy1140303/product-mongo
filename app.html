@@ -28,49 +28,69 @@
         .table-row:hover { background-color: #10b981 !important; color: #ffffff !important; }
     </style>
 </head>
-<body class="bg-gray-50 flex min-h-screen">
-    <!-- 側邊欄導航 -->
-    <div id="sidebar" class="w-64 bg-white shadow-xl h-screen sticky top-0 flex flex-col transition-all duration-300">
-        <div class="p-6 border-b">
-            <h1 class="text-2xl font-bold text-gray-800">產品管理平台</h1>
-            <p class="text-sm text-gray-500 mt-1" id="user-info">user-info</p>
-        </div>
-        <nav class="flex flex-col p-4 space-y-2">
-            <button onclick="changePage('dashboard')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-dashboard">
-                <i data-lucide="layout-grid" class="w-5 h-5 mr-3"></i>
-                儀表板
-            </button>
-            <button onclick="changePage('orders')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-orders">
-                <i data-lucide="clipboard-list" class="w-5 h-5 mr-3"></i>
-                訂單管理
-            </button>
-            <button onclick="changePage('products')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-products">
-                <i data-lucide="package" class="w-5 h-5 mr-3"></i>
-                規格登錄
-            </button>
-            <button onclick="changePage('customers')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-customers">
-                <i data-lucide="users" class="w-5 h-5 mr-3"></i>
-                客戶管理
-            </button>
-            <button onclick="changePage('contacts')" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-contacts">
-                <i data-lucide="contact" class="w-5 h-5 mr-3"></i>
-                人員建立
-            </button>
-        </nav>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+    <!-- 移動菜單按鈕 -->
+    <div class="md:hidden bg-white shadow-lg p-4 flex justify-between items-center sticky top-0 z-40">
+        <h1 class="text-xl font-bold text-gray-800">產品管理平台</h1>
+        <button onclick="toggleMobileSidebar()" class="p-2 hover:bg-gray-100 rounded-lg">
+            <i data-lucide="menu" class="w-6 h-6 text-gray-700"></i>
+        </button>
     </div>
 
-    <!-- 主要內容區 -->
-    <main class="flex-1 p-8 overflow-y-auto scrollbar-hidden">
-        <div id="app-content">
-            <div class="flex justify-center items-center h-full">
-                <p class="text-gray-500">正在載入應用程式...</p>
+    <!-- 主容器 -->
+    <div class="flex flex-1 overflow-hidden">
+        <!-- 側邊欄導航 -->
+        <div id="sidebar" class="hidden md:flex w-full md:w-64 bg-white shadow-xl md:h-screen md:sticky md:top-0 flex-col transition-all duration-300 fixed inset-0 z-30 md:relative md:z-auto">
+            <!-- 移動設備關閉按鈕 -->
+            <div class="md:hidden flex justify-between items-center p-4 border-b">
+                <h1 class="text-xl font-bold text-gray-800">產品管理平台</h1>
+                <button onclick="toggleMobileSidebar()" class="p-2 hover:bg-gray-100 rounded-lg">
+                    <i data-lucide="x" class="w-6 h-6 text-gray-700"></i>
+                </button>
             </div>
+
+            <div class="hidden md:block p-6 border-b">
+                <h1 class="text-2xl font-bold text-gray-800">產品管理平台</h1>
+                <p class="text-sm text-gray-500 mt-1" id="user-info">user-info</p>
+            </div>
+
+            <nav class="flex flex-col p-4 space-y-2 overflow-y-auto">
+                <button onclick="changePage('dashboard'); toggleMobileSidebar()" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-dashboard w-full justify-start">
+                    <i data-lucide="layout-grid" class="w-5 h-5 mr-3"></i>
+                    儀表板
+                </button>
+                <button onclick="changePage('orders'); toggleMobileSidebar()" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-orders w-full justify-start">
+                    <i data-lucide="clipboard-list" class="w-5 h-5 mr-3"></i>
+                    訂單管理
+                </button>
+                <button onclick="changePage('products'); toggleMobileSidebar()" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-products w-full justify-start">
+                    <i data-lucide="package" class="w-5 h-5 mr-3"></i>
+                    規格登錄
+                </button>
+                <button onclick="changePage('customers'); toggleMobileSidebar()" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-customers w-full justify-start">
+                    <i data-lucide="users" class="w-5 h-5 mr-3"></i>
+                    客戶管理
+                </button>
+                <button onclick="changePage('contacts'); toggleMobileSidebar()" class="nav-btn group flex items-center p-3 text-gray-700 rounded-lg hover:bg-indigo-50 hover:text-primary transition duration-150 active-contacts w-full justify-start">
+                    <i data-lucide="contact" class="w-5 h-5 mr-3"></i>
+                    人員建立
+                </button>
+            </nav>
         </div>
-    </main>
+
+        <!-- 主要內容區 -->
+        <main class="flex-1 overflow-y-auto scrollbar-hidden w-full">
+            <div id="app-content" class="p-4 sm:p-6 md:p-8">
+                <div class="flex justify-center items-center h-full">
+                    <p class="text-gray-500">正在載入應用程式...</p>
+                </div>
+            </div>
+        </main>
+    </div>
 
     <!-- 模態視窗 -->
     <div id="modal-container" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden justify-center items-center z-50">
-        <div id="modal-content" class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
+        <div id="modal-content" class="bg-white rounded-xl shadow-2xl p-4 sm:p-6 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
         </div>
     </div>
 
@@ -83,6 +103,23 @@
         let orders = [];
         let customers = [];
         let contacts = [];
+
+        // 切換移動設備側邊欄
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+        }
+
+        // 點擊邊界外時關閉側邊欄
+        document.addEventListener('click', (e) => {
+            const sidebar = document.getElementById('sidebar');
+            const menuBtn = document.querySelector('[data-lucide="menu"]');
+            if (sidebar && !sidebar.contains(e.target) && !menuBtn?.closest('button').contains(e.target)) {
+                if (window.innerWidth < 768) {
+                    sidebar.classList.add('hidden');
+                }
+            }
+        });
 
         async function apiRequest(endpoint, options = {}) {
             try {
@@ -231,96 +268,96 @@
                 </div>
 
                 <!-- KPI 卡片 -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
                     <!-- 訂單收入 -->
-                    <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl shadow-lg border border-green-200">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600 mb-2">訂單收入</p>
-                                <p class="text-3xl font-bold text-gray-900">NT$${totalRevenue.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
-                                <p class="text-xs text-green-600 mt-2 flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i>+12.5% 較上月</p>
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl shadow-lg border border-green-200">
+                        <div class="flex justify-between items-start gap-3">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">訂單收入</p>
+                                <p class="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">NT$${totalRevenue.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
+                                <p class="text-xs text-green-600 mt-1 sm:mt-2 flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i>+12.5%</p>
                             </div>
-                            <div class="bg-green-500 p-3 rounded-lg">
-                                <i data-lucide="dollar-sign" class="w-6 h-6 text-white"></i>
+                            <div class="bg-green-500 p-2 sm:p-3 rounded-lg flex-shrink-0">
+                                <i data-lucide="dollar-sign" class="w-5 h-5 sm:w-6 sm:h-6 text-white"></i>
                             </div>
                         </div>
                     </div>
 
                     <!-- 總訂單 -->
-                    <div class="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-xl shadow-lg border border-red-200">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600 mb-2">總訂單數</p>
-                                <p class="text-3xl font-bold text-gray-900">${totalOrders}</p>
-                                <p class="text-xs text-red-600 mt-2 flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i>+8.2% 較上月</p>
+                    <div class="bg-gradient-to-br from-red-50 to-red-100 p-4 sm:p-6 rounded-xl shadow-lg border border-red-200">
+                        <div class="flex justify-between items-start gap-3">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">總訂單數</p>
+                                <p class="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900">${totalOrders}</p>
+                                <p class="text-xs text-red-600 mt-1 sm:mt-2 flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i>+8.2%</p>
                             </div>
-                            <div class="bg-red-500 p-3 rounded-lg">
-                                <i data-lucide="shopping-cart" class="w-6 h-6 text-white"></i>
+                            <div class="bg-red-500 p-2 sm:p-3 rounded-lg flex-shrink-0">
+                                <i data-lucide="shopping-cart" class="w-5 h-5 sm:w-6 sm:h-6 text-white"></i>
                             </div>
                         </div>
                     </div>
 
                     <!-- 平均訂單值 -->
-                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl shadow-lg border border-blue-200">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600 mb-2">平均訂單值</p>
-                                <p class="text-3xl font-bold text-gray-900">NT$${avgOrderValue}</p>
-                                <p class="text-xs text-blue-600 mt-2 flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i>+15.3% 較上月</p>
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 sm:p-6 rounded-xl shadow-lg border border-blue-200">
+                        <div class="flex justify-between items-start gap-3">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">平均訂單值</p>
+                                <p class="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">NT$${avgOrderValue}</p>
+                                <p class="text-xs text-blue-600 mt-1 sm:mt-2 flex items-center"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i>+15.3%</p>
                             </div>
-                            <div class="bg-blue-500 p-3 rounded-lg">
-                                <i data-lucide="bar-chart-3" class="w-6 h-6 text-white"></i>
+                            <div class="bg-blue-500 p-2 sm:p-3 rounded-lg flex-shrink-0">
+                                <i data-lucide="bar-chart-3" class="w-5 h-5 sm:w-6 sm:h-6 text-white"></i>
                             </div>
                         </div>
                     </div>
 
                     <!-- 總產品/客戶 -->
-                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl shadow-lg border border-purple-200">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-sm font-medium text-gray-600 mb-2">管理資源</p>
-                                <p class="text-3xl font-bold text-gray-900">${totalProducts + totalCustomers}</p>
-                                <p class="text-xs text-purple-600 mt-2 flex items-center">
-                                    <i data-lucide="package" class="w-3 h-3 mr-1"></i>${totalProducts} 產品 / ${totalCustomers} 客戶
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-4 sm:p-6 rounded-xl shadow-lg border border-purple-200">
+                        <div class="flex justify-between items-start gap-3">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs sm:text-sm font-medium text-gray-600 mb-2">管理資源</p>
+                                <p class="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900">${totalProducts + totalCustomers}</p>
+                                <p class="text-xs text-purple-600 mt-1 sm:mt-2 truncate">
+                                    <i data-lucide="package" class="w-3 h-3 mr-1 inline"></i>${totalProducts}/${totalCustomers}
                                 </p>
                             </div>
-                            <div class="bg-purple-500 p-3 rounded-lg">
-                                <i data-lucide="layers" class="w-6 h-6 text-white"></i>
+                            <div class="bg-purple-500 p-2 sm:p-3 rounded-lg flex-shrink-0">
+                                <i data-lucide="layers" class="w-5 h-5 sm:w-6 sm:h-6 text-white"></i>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- 下半部分：即將到期和概況 -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                     <!-- 左側：即將到期產品 (2 列寬) -->
-                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i data-lucide="alert-triangle" class="w-5 h-5 mr-2 text-red-500"></i>
-                            即將到期的產品 (30 天內)
+                    <div class="lg:col-span-2 bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-red-500"></i>
+                            即將到期的產品
                         </h3>
-                        ${expiringProducts.length === 0 ? '<p class="text-gray-500 py-8 text-center">目前沒有產品即將到期。</p>' : `
+                        ${expiringProducts.length === 0 ? '<p class="text-gray-500 py-4 sm:py-8 text-center text-sm">目前沒有產品即將到期。</p>' : `
                             <div class="overflow-x-auto">
-                                <table class="min-w-full">
+                                <table class="min-w-full text-xs sm:text-sm">
                                     <thead>
                                         <tr class="border-b border-gray-200">
-                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">產品名稱</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">到期日</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">剩餘天數</th>
-                                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">庫存</th>
+                                            <th class="px-2 sm:px-4 py-2 text-left font-semibold text-gray-600">產品</th>
+                                            <th class="px-2 sm:px-4 py-2 text-left font-semibold text-gray-600 hidden sm:table-cell">到期</th>
+                                            <th class="px-2 sm:px-4 py-2 text-left font-semibold text-gray-600">天數</th>
+                                            <th class="px-2 sm:px-4 py-2 text-left font-semibold text-gray-600">庫存</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         ${expiringProducts.slice(0, 5).map(p => `
                                             <tr class="border-b border-gray-100 hover:bg-gray-50">
-                                                <td class="px-4 py-3 text-sm font-medium text-gray-900">${p.name}</td>
-                                                <td class="px-4 py-3 text-sm text-gray-600">${formatDate(p.expirationDate)}</td>
-                                                <td class="px-4 py-3 text-sm">
-                                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${daysUntil(p.expirationDate) <= 7 ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'}">
-                                                        ${daysUntil(p.expirationDate)} 天
+                                                <td class="px-2 sm:px-4 py-2 font-medium text-gray-900">${p.name.substring(0, 10)}</td>
+                                                <td class="px-2 sm:px-4 py-2 text-gray-600 hidden sm:table-cell">${formatDate(p.expirationDate)}</td>
+                                                <td class="px-2 sm:px-4 py-2">
+                                                    <span class="inline-flex items-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs font-semibold ${daysUntil(p.expirationDate) <= 7 ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'}">
+                                                        ${daysUntil(p.expirationDate)}
                                                     </span>
                                                 </td>
-                                                <td class="px-4 py-3 text-sm text-gray-600">${p.quantity} 件</td>
+                                                <td class="px-2 sm:px-4 py-2 text-gray-600">${p.quantity}</td>
                                             </tr>
                                         `).join('')}
                                     </tbody>
@@ -330,42 +367,30 @@
                     </div>
 
                     <!-- 右側：概況面板 -->
-                    <div class="bg-white p-6 rounded-xl shadow-lg">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                            <i data-lucide="building-2" class="w-5 h-5 mr-2 inline"></i>
-                            系統概況
+                    <div class="bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-4">
+                            <i data-lucide="building-2" class="w-4 h-4 sm:w-5 sm:h-5 mr-2 inline"></i>
+                            <span class="hidden sm:inline">系統概況</span><span class="sm:hidden">概況</span>
                         </h3>
-                        <div class="space-y-4">
-                            <div class="flex justify-between items-center pb-4 border-b border-gray-200">
-                                <span class="text-sm text-gray-600">
-                                    <i data-lucide="package" class="w-4 h-4 inline mr-2"></i>
-                                    產品規格
-                                </span>
-                                <span class="text-2xl font-bold text-gray-900">${totalProducts}</span>
+                        <div class="space-y-3 sm:space-y-4">
+                            <div class="flex justify-between items-center pb-3 sm:pb-4 border-b border-gray-200">
+                                <span class="text-xs sm:text-sm text-gray-600">產品</span>
+                                <span class="text-lg sm:text-2xl font-bold text-gray-900">${totalProducts}</span>
                             </div>
-                            <div class="flex justify-between items-center pb-4 border-b border-gray-200">
-                                <span class="text-sm text-gray-600">
-                                    <i data-lucide="shopping-cart" class="w-4 h-4 inline mr-2"></i>
-                                    訂單管理
-                                </span>
-                                <span class="text-2xl font-bold text-gray-900">${totalOrders}</span>
+                            <div class="flex justify-between items-center pb-3 sm:pb-4 border-b border-gray-200">
+                                <span class="text-xs sm:text-sm text-gray-600">訂單</span>
+                                <span class="text-lg sm:text-2xl font-bold text-gray-900">${totalOrders}</span>
                             </div>
-                            <div class="flex justify-between items-center pb-4 border-b border-gray-200">
-                                <span class="text-sm text-gray-600">
-                                    <i data-lucide="users" class="w-4 h-4 inline mr-2"></i>
-                                    客戶管理
-                                </span>
-                                <span class="text-2xl font-bold text-gray-900">${totalCustomers}</span>
+                            <div class="flex justify-between items-center pb-3 sm:pb-4 border-b border-gray-200">
+                                <span class="text-xs sm:text-sm text-gray-600">客戶</span>
+                                <span class="text-lg sm:text-2xl font-bold text-gray-900">${totalCustomers}</span>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-600">
-                                    <i data-lucide="contact" class="w-4 h-4 inline mr-2"></i>
-                                    聯絡人
-                                </span>
-                                <span class="text-2xl font-bold text-gray-900">${contacts.length}</span>
+                                <span class="text-xs sm:text-sm text-gray-600">人員</span>
+                                <span class="text-lg sm:text-2xl font-bold text-gray-900">${contacts.length}</span>
                             </div>
-                            <button onclick="changePage('orders')" class="w-full mt-6 bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-lg transition">
-                                查看訂單管理
+                            <button onclick="changePage('orders')" class="w-full mt-4 sm:mt-6 bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-lg transition text-sm sm:text-base">
+                                查看訂單
                             </button>
                         </div>
                     </div>
