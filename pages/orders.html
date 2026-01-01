@@ -132,8 +132,8 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600">$${order.unitPrice.toFixed(2)}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(order.startDate)} 至 ${formatDate(order.endDate)}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                        <button onclick="showOrderForm('${order.id}')" class="text-green-600 hover:text-green-900 mx-2" title="編輯"><i class="fas fa-pen-to-square"></i></button>
-                                        <button onclick="deleteOrder('${order.id}')" class="text-red-600 hover:text-red-900 mx-2" title="刪除"><i class="fas fa-trash-can"></i></button>
+                                        <button onclick="showOrderForm('${order.id}')" class="text-green-600 hover:text-green-900 mx-2 inline-block" title="編輯"><i class="fas fa-pen-to-square" style="font-size: 16px;"></i></button>
+                                        <button onclick="deleteOrder('${order.id}')" class="text-red-600 hover:text-red-900 mx-2 inline-block" title="刪除"><i class="fas fa-trash-can" style="font-size: 16px;"></i></button>
                                     </td>
                                 </tr>
                             `).join('')}
