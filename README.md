@@ -42,7 +42,7 @@ product/
 
 ## 安裝步驟
 
-### 1. 克隆或下載專案
+### 1. 複製或下載專案
 
 ```bash
 cd c:\Users\love3\Downloads\product
